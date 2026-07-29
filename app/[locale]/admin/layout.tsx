@@ -53,6 +53,7 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [adminUser, setAdminUser] = useState<{ email?: string; full_name?: string } | null>(null);
   const { loading, isAdmin } = useAdminAuth();
+  const isLoginPage = pathname.includes('/admin/login');
 
   useEffect(() => {
     setMounted(true);
@@ -101,8 +102,12 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isLoginPage) {
     return null;
+  }
+
+  if (isLoginPage) {
+    return <>{children}</>;
   }
 
   return (
