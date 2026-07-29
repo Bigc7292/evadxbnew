@@ -119,7 +119,7 @@ function normalizeImageUrl(url: string | null | undefined): string | null {
   if (!trimmed) return null;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (trimmed.startsWith('/')) return trimmed;
-  if (trimmed.startsWith('./')) return '/' + trimmed.slice(2);
+  if (trimmed.startsWith('./')) return 'https://evadxb.com/' + trimmed.slice(2);
   return null;
 }
 
