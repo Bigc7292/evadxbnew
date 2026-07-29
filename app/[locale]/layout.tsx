@@ -5,6 +5,7 @@ import { locales } from '@/i18n';
 import { Providers } from './providers';
 import { CustomCursor } from '@/lib/components/CustomCursor';
 import { Navigation } from '@/lib/components/Navigation';
+import { Footer } from '@/lib/components/Footer';
 
 export async function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -30,6 +31,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
       <Navigation locale={locale} />
       <NextIntlClientProvider messages={messages} locale={locale}>
         <Providers>{children}</Providers>
+        <Footer />
       </NextIntlClientProvider>
     </>
   );
