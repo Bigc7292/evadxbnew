@@ -97,7 +97,6 @@ scripts/map-utils.ts
 lib/hooks/
 lib/supabase/admin.ts
 lib/components/SecondaryProperties.tsx
-lib/components/StarfieldParticles.tsx
 app/[locale]/properties/secondary/
 next-env.d.ts
 .mcp.json
