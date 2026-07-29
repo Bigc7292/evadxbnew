@@ -202,6 +202,11 @@ function normalizeProperty(p: any): Property {
   const rawPrice = p.price ?? p.price_min ?? null;
   const normalizedPrice = normalizePropertyPrice(rawPrice, currency);
 
+  const normalizeArray = (items: any[]): string[] => {
+    if (!Array.isArray(items)) return [];
+    return items.map(normalizeImageUrl).filter((url): url is string => url !== null);
+  };
+
   return {
     ...p,
     id: p.id ?? '',
@@ -212,13 +217,13 @@ function normalizeProperty(p: any): Property {
     developer: p.developer ?? p.project_name ?? '',
     featured_image: normalizeImageUrl(p.featured_image ?? p.hero_image_url ?? null),
     completion_date: p.completion_date ?? (p.year_completion ? String(p.year_completion) : null),
-    gallery_images: (p.gallery_images ?? []).map(normalizeImageUrl).filter((url): url is string => url !== null),
+    gallery_images: normalizeArray(p.gallery_images),
     floor_plans: p.floor_plans ?? [],
     features: p.features ?? [],
     amenities: p.amenities ?? [],
     nearby_places: p.nearby_places ?? [],
     payment_plan: p.payment_plan ?? null,
-    images: (p.images ?? p.gallery_images ?? []).map(normalizeImageUrl).filter((url): url is string => url !== null),
+    images: normalizeArray(p.images ?? p.gallery_images),
     google_maps_embed: p.google_maps_embed ?? p.google_maps_embed_url ?? null,
     coordinates: lat != null && lng != null ? { lat, lng } : null,
     location: p.location ?? ([p.address, p.community, p.city, p.country].filter(Boolean).join(', ') || ''),
