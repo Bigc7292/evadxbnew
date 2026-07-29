@@ -82,6 +82,8 @@ export type Agent = {
 
 function normalizeAgent(a: any): Agent {
   if (!a) return a;
+  const profileImage = a.profile_image_url ?? null;
+  const normalizedProfileImage = normalizeImageUrl(profileImage);
   return {
     ...a,
     first_name: a.first_name ?? '',
@@ -89,7 +91,7 @@ function normalizeAgent(a: any): Agent {
     position: a.position ?? '',
     bio: a.bio ?? '',
     short_bio: a.short_bio ?? null,
-    profile_image_url: a.profile_image_url ?? null,
+    profile_image_url: normalizedProfileImage,
     profile_image_alt: a.profile_image_alt ?? null,
     email: a.email ?? null,
     phone: a.phone ?? null,
@@ -109,6 +111,16 @@ function normalizeAgent(a: any): Agent {
     meta_title: a.meta_title ?? null,
     meta_description: a.meta_description ?? null,
   };
+}
+
+function normalizeImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith('/')) return trimmed;
+  if (trimmed.startsWith('./')) return '/' + trimmed.slice(2);
+  return null;
 }
 
 export type BlogPost = {
@@ -198,15 +210,15 @@ function normalizeProperty(p: any): Property {
     price_type: p.price_type ?? p.listing_type ?? 'sale',
     area: p.area ?? p.area_name ?? '',
     developer: p.developer ?? p.project_name ?? '',
-    featured_image: p.featured_image ?? p.hero_image_url ?? null,
+    featured_image: normalizeImageUrl(p.featured_image ?? p.hero_image_url ?? null),
     completion_date: p.completion_date ?? (p.year_completion ? String(p.year_completion) : null),
-    gallery_images: p.gallery_images ?? [],
+    gallery_images: (p.gallery_images ?? []).map(normalizeImageUrl).filter((url): url is string => url !== null),
     floor_plans: p.floor_plans ?? [],
     features: p.features ?? [],
     amenities: p.amenities ?? [],
     nearby_places: p.nearby_places ?? [],
     payment_plan: p.payment_plan ?? null,
-    images: p.images ?? p.gallery_images ?? [],
+    images: (p.images ?? p.gallery_images ?? []).map(normalizeImageUrl).filter((url): url is string => url !== null),
     google_maps_embed: p.google_maps_embed ?? p.google_maps_embed_url ?? null,
     coordinates: lat != null && lng != null ? { lat, lng } : null,
     location: p.location ?? ([p.address, p.community, p.city, p.country].filter(Boolean).join(', ') || ''),
