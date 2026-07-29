@@ -96,7 +96,6 @@ scripts/test-*.ts
 scripts/map-utils.ts
 lib/hooks/
 lib/supabase/admin.ts
-lib/components/SecondaryProperties.tsx
 app/[locale]/properties/secondary/
 next-env.d.ts
 .mcp.json
