@@ -19,7 +19,7 @@ export default function CeoPage() {
             <div className="lg:col-span-2 space-y-8 animate-reveal-up">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl gold-glow">
                 <Image
-                  src="/elvira-11.png"
+                  src="/ceo.jpeg"
                   alt="Elvira Sharshenalieva"
                   width={600}
                   height={750}

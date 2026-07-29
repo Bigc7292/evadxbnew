@@ -201,7 +201,7 @@ function normalizeProperty(p: any): Property {
     featured_image: p.featured_image ?? p.hero_image_url ?? null,
     completion_date: p.completion_date ?? (p.year_completion ? String(p.year_completion) : null),
     gallery_images: p.gallery_images ?? [],
-    floor_plans: p.floor_plans ?? p.floor_plan_images ?? [],
+    floor_plans: p.floor_plans ?? [],
     features: p.features ?? [],
     amenities: p.amenities ?? [],
     nearby_places: p.nearby_places ?? [],
@@ -219,13 +219,14 @@ export async function getPropertyBySlug(slug: string) {
     .select('*')
     .eq('slug', slug)
     .single();
-  
+
   if (error) throw error;
   return normalizeProperty(data) as Property;
 }
 
 export async function getProperties(filters?: {
   property_type?: string;
+  listing_type?: string;
   location?: string;
   min_price?: number;
   max_price?: number;
@@ -242,6 +243,9 @@ export async function getProperties(filters?: {
 
   if (filters?.property_type) {
     query = query.eq('property_type', filters.property_type);
+  }
+  if (filters?.listing_type) {
+    query = query.or(`price_type.eq.${filters.listing_type},listing_type.eq.${filters.listing_type}`);
   }
   if (filters?.location) {
     query = query.ilike('location', `%${filters.location}%`);
@@ -301,7 +305,7 @@ export async function getAgentBySlug(slug: string) {
     .select('*')
     .eq('slug', slug)
     .single();
-  
+
   if (error) throw error;
   return normalizeAgent(data) as Agent;
 }
@@ -341,7 +345,7 @@ export async function getBlogPostBySlug(slug: string) {
     .select('*')
     .eq('slug', slug)
     .single();
-  
+
   if (error) throw error;
   return data as BlogPost;
 }
@@ -351,7 +355,7 @@ export async function getSiteConfig() {
     .from('site_config')
     .select('*')
     .single();
-  
+
   if (error) throw error;
   return data as SiteConfig;
 }
@@ -365,7 +369,7 @@ export async function createLead(lead: Omit<Lead, 'id' | 'created_at' | 'updated
     })
     .select()
     .single();
-  
+
   if (error) throw error;
   return data as Lead;
 }
