@@ -152,6 +152,7 @@ export function HeroSection() {
             </div>
             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
             <div className="absolute inset-0 bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
+            <StarfieldParticles horizonRatio={0.65} maxParticles={120} spawnRate={0.25} mouseSpawnRadius={180} mouseSpawnBoost={4} />
           </div>
 
           {/* Animated Gold Particles */}
