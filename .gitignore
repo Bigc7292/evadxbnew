@@ -1,0 +1,85 @@
+﻿# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Environment and secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env
+.env.*.local
+
+# Cache and logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.cache/
+.parcel-cache/
+
+# Editor and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Misc
+*.pem
+*.key
+*.cert
+*.log
+*.tsbuildinfo
+
+# Local scripts and tools
+fix-*.js
+merge-*.js
+patch-*.js
+scan-*.js
+test-*.ts
+test-*.mjs
+test-anon.ts
+test-db.ts
+debugapp..excalidraw
+
+# Screenshots and debug assets
+*.png
+*.jpg
+*.jpeg
+*.svg
+admin-agents-page.png
+header-visible.png
+offplan-new-design.png
+offplan-page-working.png
+offplan-page.png
+navigation-added.png
+
+# 3D homepage standalone
+3d_homepage/
+
+# Continue/resume artifacts
+.continue/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Kilo local config
+.kilo/
+# Sensitive scripts with embedded keys
+scripts/run-migration*.mjs
+scripts/seed*.mjs
+scripts/check-*.mjs
+scripts/diagnose-*.mjs
