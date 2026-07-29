@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { ArrowRight, Search, ChevronDown, Globe, Heart, MapPin, LayoutGrid, Menu, X, Building2, ShieldCheck } from 'lucide-react';
+import { StarfieldParticles } from '@/lib/components/StarfieldParticles';
 import { Button } from '@/lib/components/ui/button';
 import { Input } from '@/lib/components/ui/input';
 import { useRouter } from 'next/navigation';

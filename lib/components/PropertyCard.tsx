@@ -27,10 +27,14 @@ import type { Property } from '@/lib/supabase/queries';
 interface PropertyCardProps {
   property: Property;
   locale: string;
-  index: number;
+  index?: number;
 }
 
 const IMAGE_FALLBACK = '/placeholder-property.svg';
+
+function stripMarkdownImages(text: string): string {
+  return text.replace(/!\[\s*\]\([^)]+\)/g, '').replace(/\s+/g, ' ').trim();
+}
 
 export function PropertyCard({ property, locale, index }: PropertyCardProps) {
   const t = useTranslations('properties.card');
@@ -63,7 +67,7 @@ export function PropertyCard({ property, locale, index }: PropertyCardProps) {
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
-      transition={{ delay: Math.min(index * 0.06, 0.6), duration: 0.5 }}
+      transition={{ delay: Math.min((index ?? 0) * 0.06, 0.6), duration: 0.5 }}
       className="group relative rounded-[1.5rem] overflow-hidden border border-border/60 bg-card shadow-sm transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 hover:-translate-y-1"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -106,7 +110,7 @@ export function PropertyCard({ property, locale, index }: PropertyCardProps) {
         </motion.button>
 
         <div className="absolute bottom-4 left-4 z-20">
-          <Badge variant="outline" className="backdrop-blur-md bg-white/85 text-foreground border-white/60 hover:bg-accent/10 transition-colors">
+          <Badge variant="outline" className="backdrop-blur-md bg-white/90 text-gray-900 border-white/60 hover:bg-accent/10 transition-colors shadow-sm">
             {property.property_type.replace('_', ' ')}
           </Badge>
         </div>
@@ -125,7 +129,7 @@ export function PropertyCard({ property, locale, index }: PropertyCardProps) {
         </Link>
 
         {property.short_description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{property.short_description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{stripMarkdownImages(property.short_description)}</p>
         )}
 
         <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/75">

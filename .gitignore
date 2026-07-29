@@ -83,3 +83,21 @@ scripts/run-migration*.mjs
 scripts/seed*.mjs
 scripts/check-*.mjs
 scripts/diagnose-*.mjs
+
+# Local runtime/data folders
+data/
+e2e/
+jitter_custom_elements/
+
+# Local scripts and test helpers
+scripts/scrape-*.ts
+scripts/seed-*.ts
+scripts/test-*.ts
+scripts/map-utils.ts
+lib/hooks/
+lib/supabase/admin.ts
+lib/components/SecondaryProperties.tsx
+lib/components/StarfieldParticles.tsx
+app/[locale]/properties/secondary/
+next-env.d.ts
+.mcp.json

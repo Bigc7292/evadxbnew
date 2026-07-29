@@ -102,7 +102,7 @@ function MapLibreInner({ latitude, longitude, title, mapType = 'satellite' }: Ma
           }
         }
 
-        new lib.Marker({ color: '#C5A059' })
+        new lib.Marker({ color: '#E5CA9B' })
           .setLngLat([longitude, latitude])
           .setPopup(new lib.Popup().setHTML(`<strong>${title}</strong>`))
           .addTo(map);
@@ -180,7 +180,7 @@ function DubaiCenteredMap() {
       });
 
       map.on('load', () => {
-        new lib.Marker({ color: '#C5A059' })
+        new lib.Marker({ color: '#E5CA9B' })
           .setLngLat([DUBAI_CENTER.lng, DUBAI_CENTER.lat])
           .setPopup(new lib.Popup().setHTML('<strong>Dubai, UAE</strong>'))
           .addTo(map);

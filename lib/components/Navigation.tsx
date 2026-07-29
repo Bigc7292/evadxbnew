@@ -27,9 +27,9 @@ const socialLinks = [
 ];
 
 const EVA_LOGO_URL = '/logo.jpg';
-const EVA_GREEN = '#154938';
+const EVA_GREEN = '#1B4644';
 const EVA_GREEN_DARK = '#0B2A22';
-const EVA_GOLD = '#C5A059';
+const EVA_GOLD = '#E5CA9B';
 const EVA_SURFACE = '#F8F6F0';
 const EVA_DARK_SURFACE = '#030A07';
 
@@ -56,7 +56,7 @@ export function Navigation({ locale }: NavigationProps) {
         title: 'Properties',
         links: [
           { href: `/${locale}/properties/off-plan`, label: 'Off-Plan Properties' },
-          { href: `/${locale}/properties`, label: 'Secondary Properties' },
+          { href: `/${locale}/properties/secondary`, label: 'Secondary Properties' },
         ],
       },
     ],

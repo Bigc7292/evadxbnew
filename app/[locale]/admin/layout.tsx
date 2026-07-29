@@ -18,10 +18,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   Menu,
-  X,
-  Sun,
-  Moon,
-  Home
+  Home,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/lib/components/ui/button';
@@ -31,6 +29,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Separator } from '@/lib/components/ui/separator';
 import { Badge } from '@/lib/components/ui/badge';
 import { useTheme } from 'next-themes';
+import { useAdminAuth } from '@/lib/hooks/useAdminAuth';
+import { createClient } from '@/lib/supabase/client';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -51,6 +51,12 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [adminUser, setAdminUser] = useState<{ email?: string; full_name?: string } | null>(null);
+  const { loading, isAdmin } = useAdminAuth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -62,16 +68,45 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     localStorage.setItem('adminSidebarOpen', sidebarOpen.toString());
   }, [sidebarOpen]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      const fetchUser = async () => {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setAdminUser({
+            email: session.user.email || undefined,
+            full_name: session.user.user_metadata?.name || undefined,
+          });
+        }
+      };
+      fetchUser();
+    }
+  }, [isAdmin]);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = `/${locale}/admin/login`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
     <div className="flex h-screen bg-background">
-      {/* Mobile Overlay */}
       <AnimatePresence>
         {mobileSidebarOpen && (
           <motion.div
@@ -84,7 +119,6 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
       <motion.aside
         initial={{ width: sidebarOpen ? 280 : 72 }}
         animate={{ width: sidebarOpen ? 280 : 72 }}
@@ -96,7 +130,6 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
         )}
         style={{ width: sidebarOpen ? 280 : 72 }}
       >
-        {/* Logo */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-border">
           <Link href={`/${locale}/admin`} className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
@@ -126,7 +159,6 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" aria-label="Admin navigation">
           {navigation.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -157,7 +189,6 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        {/* Bottom Section */}
         <div className="p-3 border-t border-border">
           <div className="flex items-center gap-3 px-3">
             <Avatar className="w-8 h-8">
@@ -166,8 +197,8 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
             </Avatar>
             {sidebarOpen && (
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">Admin User</p>
-                <p className="text-xs text-muted-foreground">Super Administrator</p>
+                <p className="font-medium text-sm truncate">{adminUser?.full_name || 'Admin User'}</p>
+                <p className="text-xs text-muted-foreground truncate">{adminUser?.email || 'superadmin@evadxb.com'}</p>
               </div>
             )}
           </div>
@@ -185,33 +216,24 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
               {sidebarOpen && <span className="font-medium text-sm">View Website</span>}
             </Link>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-xl transition-colors w-full",
-                  sidebarOpen ? "justify-start" : "justify-center"
-                )}>
-                  <LogOut className="w-5 h-5 flex-shrink-0" />
-                  {sidebarOpen && <span className="font-medium text-sm text-destructive">Logout</span>}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              onClick={handleLogout}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-xl transition-colors w-full",
+                sidebarOpen ? "justify-start" : "justify-center"
+              )}
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              {sidebarOpen && <span className="font-medium text-sm text-destructive">Logout</span>}
+            </button>
           </div>
         </div>
       </motion.aside>
 
-      {/* Main Content */}
       <div className={cn(
         "flex-1 flex flex-col min-w-0 transition-all duration-300 lg:ml-0",
         sidebarOpen ? "lg:ml-72" : "lg:ml-18"
       )}>
-        {/* Top Bar */}
         <header className="sticky top-0 z-30 h-16 bg-background/95 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <button
@@ -227,7 +249,6 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Search */}
             <div className="relative hidden md:block">
               <Input
                 placeholder="Search properties, agents..."
@@ -238,7 +259,6 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             </div>
 
-            {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 rounded-lg hover:bg-accent transition-colors"
@@ -247,13 +267,11 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
               {mounted ? (theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />) : <Moon className="w-5 h-5" />}
             </button>
 
-            {/* Notifications */}
             <button className="relative p-2 rounded-lg hover:bg-accent transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
             </button>
 
-            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-accent transition-colors">
@@ -265,8 +283,8 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-2 py-1 border-b border-border">
-                  <p className="font-medium text-sm">Admin User</p>
-                  <p className="text-xs text-muted-foreground">superadmin@evadxb.com</p>
+                  <p className="font-medium text-sm">{adminUser?.full_name || 'Admin User'}</p>
+                  <p className="text-xs text-muted-foreground">{adminUser?.email || 'superadmin@evadxb.com'}</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
@@ -274,7 +292,7 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </DropdownMenuItem>
@@ -283,7 +301,6 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           {children}
         </main>
@@ -292,7 +309,7 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
   );
 }
 
-import { Search, Bell, TrendingUp } from 'lucide-react';
+import { Search, Bell, Sun, Moon, TrendingUp } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return <AdminSidebar>{children}</AdminSidebar>;
