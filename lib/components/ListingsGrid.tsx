@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
-import { ArrowRight, Search, ChevronDown, Globe, Heart, MapPin, LayoutGrid, List, Filter, X, Bed, Bath, Maximize, Share2, Star, Menu, X as CloseIcon } from 'lucide-react';
+import { ArrowRight, Search, ChevronDown, Globe, Heart, MapPin, LayoutGrid, List, Filter, X, Bed, Bath, Maximize, Share2, Star, Menu, X as CloseIcon, Home, Hotel } from 'lucide-react';
 import { Button } from '@/lib/components/ui/button';
 import { Input } from '@/lib/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/lib/components/ui/select';
@@ -11,7 +11,7 @@ import { Badge } from '@/lib/components/ui/badge';
 import { cn, formatPrice } from '@/lib/utils';
 import type { Property } from '@/lib/supabase/queries';
 import { PropertyCard } from './PropertyCard';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 interface ListingsGridProps {
   properties: Property[];
@@ -22,6 +22,7 @@ interface ListingsGridProps {
   onLoadMore?: () => void;
   filters?: Record<string, any>;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  defaultFilters?: Record<string, any>;
 }
 
 export function ListingsGrid({
@@ -33,6 +34,7 @@ export function ListingsGrid({
   onLoadMore,
   filters = {},
   onFiltersChange,
+  defaultFilters = {},
 }: ListingsGridProps) {
   const t = useTranslations('properties');
   const tCommon = useTranslations('common');
@@ -43,9 +45,34 @@ export function ListingsGrid({
   const [selectedLocation, setSelectedLocation] = useState('');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
   const [bedrooms, setBedrooms] = useState<string>('');
+  const [listingType, setListingType] = useState<'sale' | 'rent' | ''>('');
 
   const propertyTypes = ['apartment', 'villa', 'townhouse', 'penthouse', 'studio', 'commercial', 'land'];
   const locations = ['Dubai Marina', 'Downtown Dubai', 'Business Bay', 'Palm Jumeirah', 'Jumeirah Village', 'Dubai Hills', 'The Valley', 'City Walk', 'Dubai Investment Park', 'Palm Jebel Ali'];
+
+  const filteredProperties = useMemo(() => {
+    return properties.filter((property) => {
+      if (searchQuery && !property.title.toLowerCase().includes(searchQuery.toLowerCase()) && !property.location.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      if (selectedType && property.property_type !== selectedType) {
+        return false;
+      }
+      if (selectedLocation && property.location !== selectedLocation) {
+        return false;
+      }
+      if (listingType && property.price_type !== listingType) {
+        return false;
+      }
+      if (bedrooms && property.bedrooms !== parseInt(bedrooms)) {
+        return false;
+      }
+      if (property.price && (property.price < priceRange[0] || property.price > priceRange[1])) {
+        return false;
+      }
+      return true;
+    });
+  }, [properties, searchQuery, selectedType, selectedLocation, listingType, bedrooms, priceRange]);
 
   const handleFilterChange = (key: string, value: any) => {
     onFiltersChange?.({ ...filters, [key]: value });
@@ -57,17 +84,18 @@ export function ListingsGrid({
     setSelectedLocation('');
     setPriceRange([0, 5000000]);
     setBedrooms('');
+    setListingType('');
     onFiltersChange?.({});
   };
 
-  const hasActiveFilters = searchQuery || selectedType || selectedLocation || priceRange[0] > 0 || priceRange[1] < 5000000 || bedrooms;
+  const hasActiveFilters = searchQuery || selectedType || selectedLocation || listingType || priceRange[0] > 0 || priceRange[1] < 5000000 || bedrooms;
 
   return (
     <div className="space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
         <div>
           <h2 className="font-heading text-3xl font-bold gradient-gold">{t('subtitle')}</h2>
-          <p className="text-muted-foreground mt-1">{totalCount ? t('resultsFound', { count: totalCount }) : t('resultsShowing', { count: properties.length })}</p>
+          <p className="text-muted-foreground mt-1">{filteredProperties.length > 0 ? t('resultsFound', { count: filteredProperties.length }) : t('resultsShowing', { count: filteredProperties.length })}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex bg-muted/80 rounded-2xl p-1 border border-border/60">
@@ -81,7 +109,7 @@ export function ListingsGrid({
           <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn('gap-2 rounded-xl border-border/70', hasActiveFilters && 'border-accent text-accent')}>
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">{t('filters.title')}</span>
-            {hasActiveFilters && <Badge variant="success" className="ml-1">{Object.keys(filters).length}</Badge>}
+            {hasActiveFilters && <Badge variant="success" className="ml-1">{Object.keys(filters).length + (listingType ? 1 : 0)}</Badge>}
           </Button>
         </div>
       </div>
@@ -111,19 +139,34 @@ export function ListingsGrid({
               <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.bedrooms')} /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="">{t('filters.anyBeds')}</SelectItem>
-                {[1, 2, 3, 4, 5].map(b => (<SelectItem key={b} value={b.toString()}>{b}+ {tCommon('bedrooms')}</SelectItem>))}
+                {[1, 2, 3, 4, 5, 6, 7].map(b => (<SelectItem key={b} value={b.toString()}>{b}+ {tCommon('bedrooms')}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-3">{t('filters.priceRange')}</label>
-            <div className="flex items-center gap-4">
-              <input type="range" min="0" max="5000000" step="100000" value={priceRange[0]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([Math.min(val, priceRange[1] - 100000), priceRange[1]]); handleFilterChange('price_min', Math.min(val, priceRange[1] - 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
-              <input type="range" min="0" max="5000000" step="100000" value={priceRange[1]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([priceRange[0], Math.max(val, priceRange[0] + 100000)]); handleFilterChange('price_max', Math.max(val, priceRange[0] + 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
-              <div className="w-32 text-right text-sm font-medium gradient-gold">{priceRange[1] >= 5000000 ? 'AED 5M+' : `${(priceRange[1] / 1000000).toFixed(1)}M`}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-3">{t('filters.priceRange') || 'Price Range'}</label>
+              <div className="flex items-center gap-4">
+                <input type="range" min="0" max="5000000" step="100000" value={priceRange[0]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([Math.min(val, priceRange[1] - 100000), priceRange[1]]); handleFilterChange('price_min', Math.min(val, priceRange[1] - 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
+                <input type="range" min="0" max="5000000" step="100000" value={priceRange[1]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([priceRange[0], Math.max(val, priceRange[0] + 100000)]); handleFilterChange('price_max', Math.max(val, priceRange[0] + 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
+                <div className="w-32 text-right text-sm font-medium gradient-gold">{priceRange[1] >= 5000000 ? 'AED 5M+' : `${(priceRange[1] / 1000000).toFixed(1)}M`}</div>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground mt-2"><span>AED 0</span><span>AED 5M+</span></div>
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground mt-2"><span>AED 0</span><span>AED 5M+</span></div>
+            <div>
+              <label className="block text-sm font-medium mb-3">{t('filters.listingType') || 'Listing Type'}</label>
+              <div className="flex bg-muted/80 rounded-2xl p-1 border border-border/60">
+                <button onClick={() => { setListingType(listingType === 'sale' ? '' : 'sale'); handleFilterChange('listing_type', listingType === 'sale' ? '' : 'sale'); }} className={cn('flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all', listingType === 'sale' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')}>
+                  <Home className="w-4 h-4" />
+                  {t('filters.purchase') || 'Purchase'}
+                </button>
+                <button onClick={() => { setListingType(listingType === 'rent' ? '' : 'rent'); handleFilterChange('listing_type', listingType === 'rent' ? '' : 'rent'); }} className={cn('flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all', listingType === 'rent' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')}>
+                  <Hotel className="w-4 h-4" />
+                  {t('filters.rent') || 'Rent'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {hasActiveFilters && (
@@ -133,7 +176,7 @@ export function ListingsGrid({
       </motion.div>
 
       <motion.div layout className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4')}>
-        {properties.map((property, index) => (
+        {filteredProperties.map((property, index) => (
           <PropertyCard key={property.id} property={property} locale={locale} index={index} />
         ))}
 
@@ -143,7 +186,7 @@ export function ListingsGrid({
           </motion.div>
         )}
 
-        {properties.length === 0 && !loading && (
+        {filteredProperties.length === 0 && !loading && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="col-span-full text-center py-20">
             <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center"><Search className="w-8 h-8 text-muted-foreground" /></div>
             <h3 className="font-heading text-xl font-semibold mb-2">{t('grid.noResults')}</h3>
