@@ -141,6 +141,9 @@
     "seeAll": "See all",
     "filters": {
       "title": "Filters",
+      "listingType": "Listing Type",
+      "purchase": "Purchase",
+      "rent": "Rent",
       "propertyType": "Property type",
       "location": "Location",
       "priceRange": "Price range",
