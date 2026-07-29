@@ -158,8 +158,8 @@ export function HeroSection() {
             {[...Array(20)].map((_, i) => {
               const angle = (i / 20) * Math.PI * 2;
               const radius = 0.3 + (i % 5) * 0.15;
-              const x = 50 + Math.cos(angle) * radius * 40;
-              const y = 50 + Math.sin(angle) * radius * 40;
+              const x = Math.round((50 + Math.cos(angle) * radius * 40) * 10000) / 10000;
+              const y = Math.round((50 + Math.sin(angle) * radius * 40) * 10000) / 10000;
               const duration = 8 + (i % 7) * 1.2;
               const delay = (i % 10) * 0.6;
 
