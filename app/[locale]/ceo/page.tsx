@@ -172,14 +172,8 @@ export default function CeoPage() {
               </ul>
             </div>
 
-            <div className="rounded-2xl overflow-hidden shadow-xl">
-              <Image
-                src="/awards-eva.jpg"
-                alt="EVA Awards"
-                width={600}
-                height={400}
-                className="w-full h-auto object-cover"
-              />
+            <div className="rounded-2xl overflow-hidden shadow-xl aspect-[3/2] bg-muted flex items-center justify-center">
+              <span className="text-muted-foreground text-sm">Awards Image</span>
             </div>
           </div>
         </div>
