@@ -205,14 +205,14 @@
   }
 
   .gradient-green {
-    background: linear-gradient(135deg, #0A2218 0%, #1A4A32 50%, #0A2218 100%);
+    background: linear-gradient(135deg, #1B4644 0%, #2A6B62 50%, #1B4644 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .bg-gradient-luxury {
-    background: linear-gradient(135deg, #0A2218 0%, #1A4A32 50%, #0A2218 100%);
+    background: linear-gradient(135deg, #1B4644 0%, #2A6B62 50%, #1B4644 100%);
   }
 
   .bg-gradient-gold {
@@ -220,15 +220,15 @@
   }
 
   .bg-gradient-hero {
-    background: linear-gradient(145deg, #0A2218 0%, #123A25 40%, #0D2B1E 100%);
+    background: linear-gradient(145deg, #1B4644 0%, #2A6B62 40%, #143D39 100%);
   }
 
   .gold-glow {
-    box-shadow: 0 0 30px rgba(197, 160, 89, 0.25), 0 0 60px rgba(197, 160, 89, 0.1);
+    box-shadow: 0 0 30px rgba(229, 202, 155, 0.25), 0 0 60px rgba(229, 202, 155, 0.1);
   }
 
   .gold-glow-strong {
-    box-shadow: 0 0 40px rgba(197, 160, 89, 0.4), 0 0 80px rgba(197, 160, 89, 0.15);
+    box-shadow: 0 0 40px rgba(229, 202, 155, 0.4), 0 0 80px rgba(229, 202, 155, 0.15);
   }
 
   .luxury-shadow {
