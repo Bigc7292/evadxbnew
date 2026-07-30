@@ -88,8 +88,8 @@ export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, 
   };
 
   return (
-    <div className="sticky top-0 z-40">
-      <div className="bg-background/80 backdrop-blur-xl border-b border-border/70">
+    <div className="sticky top-16 z-50">
+      <div className="bg-background/90 backdrop-blur-xl border-b border-border/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -143,7 +143,7 @@ export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, 
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="bg-background/90 backdrop-blur-xl border-b border-border/70 shadow-lg"
+            className="bg-background/95 backdrop-blur-xl border-b border-border/70 shadow-lg"
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <div className="flex items-center justify-between mb-4">
@@ -160,7 +160,7 @@ export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, 
                     <SelectTrigger className="pl-9 rounded-xl border-border/70">
                       <SelectValue placeholder="Location" />
                     </SelectTrigger>
-                    <SelectContent className="z-[60]">
+                    <SelectContent portal={false} className="absolute left-0 top-full z-[70] mt-2 w-[var(--radix-select-trigger-width)] bg-card border border-border shadow-xl">
                       <SelectItem value="">All locations</SelectItem>
                       {LOCATIONS.map((loc) => (
                         <SelectItem key={loc} value={loc}>{loc}</SelectItem>
@@ -175,7 +175,7 @@ export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, 
                     <SelectTrigger className="pl-9 rounded-xl border-border/70">
                       <SelectValue placeholder="Property type" />
                     </SelectTrigger>
-                    <SelectContent className="z-[60]">
+                    <SelectContent portal={false} className="absolute left-0 top-full z-[70] mt-2 w-[var(--radix-select-trigger-width)] bg-card border border-border shadow-xl">
                       <SelectItem value="">All types</SelectItem>
                       {PROPERTY_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>
@@ -190,7 +190,7 @@ export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, 
                     <SelectTrigger className="pl-9 rounded-xl border-border/70">
                       <SelectValue placeholder="Bedrooms" />
                     </SelectTrigger>
-                    <SelectContent className="z-[60]">
+                    <SelectContent portal={false} className="absolute left-0 top-full z-[70] mt-2 w-[var(--radix-select-trigger-width)] bg-card border border-border shadow-xl">
                       <SelectItem value="">Any bedrooms</SelectItem>
                       {BEDROOMS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>

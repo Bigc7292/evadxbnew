@@ -170,27 +170,27 @@ export function ListingsGrid({
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder={t('filters.search')} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); handleFilterChange('search', e.target.value); }} className="pl-10 rounded-xl border-border/70" />
               </div>
-              <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); handleFilterChange('property_type', v); }}>
-                <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.propertyType')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t('filters.allTypes')}</SelectItem>
-                  {propertyTypes.map(type => (<SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedLocation} onValueChange={(v) => { setSelectedLocation(v); handleFilterChange('location', v); }}>
-                <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.location')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t('filters.allLocations')}</SelectItem>
-                  {locations.map(loc => (<SelectItem key={loc} value={loc}>{loc}</SelectItem>))}
-                </SelectContent>
-              </Select>
-              <Select value={bedrooms} onValueChange={(v) => { setBedrooms(v); handleFilterChange('bedrooms', v); }}>
-                <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.bedrooms')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t('filters.anyBeds')}</SelectItem>
-                  {[1, 2, 3, 4, 5, 6, 7].map(b => (<SelectItem key={b} value={b.toString()}>{b}+ {tCommon('bedrooms')}</SelectItem>))}
-                </SelectContent>
-              </Select>
+               <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); handleFilterChange('property_type', v); }}>
+                 <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.propertyType')} /></SelectTrigger>
+                 <SelectContent portal={false} className="absolute left-0 top-full z-[70] mt-2 w-[var(--radix-select-trigger-width)] bg-card border border-border shadow-xl">
+                   <SelectItem value="">{t('filters.allTypes')}</SelectItem>
+                   {propertyTypes.map(type => (<SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>))}
+                 </SelectContent>
+               </Select>
+               <Select value={selectedLocation} onValueChange={(v) => { setSelectedLocation(v); handleFilterChange('location', v); }}>
+                 <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.location')} /></SelectTrigger>
+                 <SelectContent portal={false} className="absolute left-0 top-full z-[70] mt-2 w-[var(--radix-select-trigger-width)] bg-card border border-border shadow-xl">
+                   <SelectItem value="">{t('filters.allLocations')}</SelectItem>
+                   {locations.map(loc => (<SelectItem key={loc} value={loc}>{loc}</SelectItem>))}
+                 </SelectContent>
+               </Select>
+               <Select value={bedrooms} onValueChange={(v) => { setBedrooms(v); handleFilterChange('bedrooms', v); }}>
+                 <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.bedrooms')} /></SelectTrigger>
+                 <SelectContent portal={false} className="absolute left-0 top-full z-[70] mt-2 w-[var(--radix-select-trigger-width)] bg-card border border-border shadow-xl">
+                   <SelectItem value="">{t('filters.anyBeds')}</SelectItem>
+                   {[1, 2, 3, 4, 5, 6, 7].map(b => (<SelectItem key={b} value={b.toString()}>{b}+ {tCommon('bedrooms')}</SelectItem>))}
+                 </SelectContent>
+               </Select>
             </div>
 
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -240,7 +240,7 @@ export function ListingsGrid({
                   <SelectTrigger className="rounded-xl border-border/70">
                     <SelectValue placeholder={t('filters.anySize') || 'Any Size'} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent portal={false} className="absolute left-0 top-full z-[70] mt-2 w-[var(--radix-select-trigger-width)] bg-card border border-border shadow-xl">
                     <SelectItem value="">{t('filters.anySize') || 'Any Size'}</SelectItem>
                     {areaRanges.filter((r) => r.min !== undefined || r.max !== undefined).map((r) => (
                       <SelectItem key={`${r.min}-${r.max}`} value={`${r.min}-${r.max}`}>

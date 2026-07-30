@@ -16,7 +16,7 @@ SelectValue.displayName = SelectPrimitive.Value.displayName;
 const SelectTrigger = SelectPrimitive.Trigger;
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
-const SelectContent = SelectPrimitive.Content;
+const SelectContent = SelectPrimitive.Content as any;
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
 const SelectLabel = SelectPrimitive.Label;

@@ -118,7 +118,7 @@ export default function PropertiesPage({ params }: PageProps) {
       <Suspense fallback={<div className="px-4 sm:px-6 lg:px-8 py-16"><div className="max-w-7xl mx-auto"><div className="animate-pulse space-y-4"><div className="h-8 bg-muted rounded w-1/3" /><div className="h-64 bg-muted rounded" /></div></div></div>}>
         <PropertiesContent />
       </Suspense>
-      <SecondaryPropertiesClient locale={useLocale()} limit={12} />
+      <SecondaryPropertiesClient locale={useLocale()} />
     </>
   );
 }
