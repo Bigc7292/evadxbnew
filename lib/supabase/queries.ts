@@ -275,7 +275,7 @@ export async function getProperties(filters?: {
     query = query.eq('property_type', filters.property_type);
   }
   if (filters?.listing_type) {
-    query = query.or(`price_type.eq.${filters.listing_type},listing_type.eq.${filters.listing_type}`);
+    query = query.eq('listing_type', filters.listing_type);
   }
   if (filters?.location) {
     query = query.ilike('location', `%${filters.location}%`);
