@@ -223,76 +223,54 @@ export function HeroSection() {
                 {t('hero.description')}
               </motion.p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full max-w-4xl"
-              >
-                <div className="relative w-full rounded-3xl border border-accent/30 bg-black/40 backdrop-blur-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center">
-                    <div className="flex items-center gap-3 px-5 py-4 sm:border-r border-white/10 flex-1">
-                      <Search className="w-5 h-5 text-accent" />
-                      <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                        placeholder={t('hero.searchPlaceholder')}
-                        className="border-0 bg-transparent text-white placeholder:text-white/60 focus:outline-none focus:ring-0 focus:border-0 focus:ring-offset-0 p-0 h-auto shadow-none w-full"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 px-5 py-4 sm:border-r border-white/10">
-                      <MapPin className="w-5 h-5 text-accent" />
-                      <Select defaultValue="all">
-                        <SelectTrigger className="border-0 bg-transparent text-white hover:bg-transparent focus:outline-none focus:ring-0 focus:border-0 focus:ring-offset-0 p-0 h-auto shadow-none">
-                          <SelectValue placeholder="All Locations" />
-                        </SelectTrigger>
-                        <SelectContent className="mt-2 w-full bg-card/95 glass-dark border-border rounded-2xl">
-                          <SelectItem value="all">All Locations</SelectItem>
-                          <SelectItem value="dubai-marina">Dubai Marina</SelectItem>
-                          <SelectItem value="palm-jumeirah">Palm Jumeirah</SelectItem>
-                          <SelectItem value="downtown">Downtown Dubai</SelectItem>
-                          <SelectItem value="business-bay">Business Bay</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center gap-3 px-5 py-4">
-                      <Button
-                        variant="luxury"
-                        size="sm"
-                        onClick={handleSearch}
-                        className="w-full sm:w-auto px-8 py-3.5 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-accent/30 transition-all duration-200"
-                      >
-                        {t('hero.search')}
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 mt-5">
-                  <Link
-                    href={`/${locale}/properties/off-plan`}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/80 text-xs font-medium hover:bg-white/10 hover:text-white hover:border-white/30 transition-all duration-200"
-                  >
-                    <span className="text-accent">✦</span>
-                    {t('navigation.offPlan')}
-                  </Link>
-                  <Link
-                    href={`/${locale}/properties`}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/80 text-xs font-medium hover:bg-white/10 hover:text-white hover:border-white/30 transition-all duration-200"
-                  >
-                    <span className="text-accent">✦</span>
-                    {t('navigation.properties')}
-                  </Link>
-                  <Link
-                    href={`/${locale}/properties?status=featured`}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 text-white/80 text-xs font-medium hover:bg-white/10 hover:text-white hover:border-white/30 transition-all duration-200"
-                  >
-                    <span className="text-accent">✦</span>
-                    Featured
-                  </Link>
-                </div>
-              </motion.div>
+               <motion.div
+                 initial={{ opacity: 0, y: 40 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 transition={{ duration: 0.8, delay: 1, ease: [0.16, 1, 0.3, 1] }}
+                 className="w-full max-w-xl"
+               >
+                 <div className="relative w-full rounded-2xl border border-accent/30 bg-black/40 backdrop-blur-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]">
+                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center">
+                     <div className="flex items-center gap-3 px-4 py-3 sm:border-r border-white/10 flex-1">
+                       <Search className="w-4 h-4 sm:w-5 sm:h-5 text-accent flex-shrink-0" />
+                       <Input
+                         value={searchQuery}
+                         onChange={(e) => setSearchQuery(e.target.value)}
+                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                         placeholder={t('hero.searchPlaceholder')}
+                         className="border-0 bg-transparent text-white placeholder:text-white/60 focus:outline-none focus:ring-0 focus:border-0 focus:ring-offset-0 p-0 h-auto shadow-none w-full text-sm sm:text-base"
+                       />
+                     </div>
+                     <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+                       <Button
+                         variant="luxury"
+                         size="sm"
+                         onClick={handleSearch}
+                         className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-accent/30 transition-all duration-200"
+                       >
+                         {t('hero.search')}
+                         <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
+                       </Button>
+                     </div>
+                   </div>
+                 </div>
+                 <div className="flex flex-wrap items-center gap-3 mt-4">
+                   <Link
+                     href={`/${locale}/properties/off-plan`}
+                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 text-white/80 text-xs font-medium hover:bg-white/10 hover:text-white hover:border-white/30 transition-all duration-200"
+                   >
+                     <span className="text-accent">✦</span>
+                     {t('navigation.offPlan')}
+                   </Link>
+                   <Link
+                     href={`/${locale}/properties/secondary`}
+                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 text-white/80 text-xs font-medium hover:bg-white/10 hover:text-white hover:border-white/30 transition-all duration-200"
+                   >
+                     <span className="text-accent">✦</span>
+                     Secondary
+                   </Link>
+                 </div>
+               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 30 }}

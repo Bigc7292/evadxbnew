@@ -11,7 +11,7 @@ import { Badge } from '@/lib/components/ui/badge';
 import { cn, formatPrice } from '@/lib/utils';
 import type { Property } from '@/lib/supabase/queries';
 import { PropertyCard } from './PropertyCard';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 interface ListingsGridProps {
   properties: Property[];
@@ -65,7 +65,13 @@ export function ListingsGrid({
     { label: '5,000+ sqft', min: 5000, max: undefined },
   ];
 
+  const filtersKey = useMemo(() => JSON.stringify(filters), [filters]);
+  const initializedRef = useRef(false);
+
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     setSearchQuery(filters?.search || '');
     setSelectedType(filters?.property_type || '');
     setSelectedLocation(filters?.location || '');
@@ -79,7 +85,7 @@ export function ListingsGrid({
       typeof filters?.min_area === 'number' ? filters.min_area : 0,
       typeof filters?.max_area === 'number' ? filters.max_area : 10000,
     ]);
-  }, [filters]);
+  }, [filtersKey]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {

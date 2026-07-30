@@ -143,7 +143,7 @@ export function Navigation({ locale }: NavigationProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative group hidden sm:block">
+            <div className="relative group block sm:block">
               <Button
                 variant="ghost"
                 size="sm"
@@ -227,6 +227,27 @@ export function Navigation({ locale }: NavigationProps) {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-2 pt-2 border-t" style={{ borderColor: 'rgba(245, 245, 240, 0.12)' }}>
+              <div className="px-2 pb-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: EVA_GOLD }}>
+                  Language
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {languages.map((lang) => (
+                    <Link
+                      key={lang.code}
+                      href={`/${lang.code}/properties/off-plan`}
+                      className="px-2 py-1 text-[11px] font-medium rounded-md transition-colors"
+                      style={{ color: EVA_SURFACE, backgroundColor: lang.code === locale ? EVA_GREEN_DARK : 'transparent' }}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {lang.flag} {lang.code.toUpperCase()}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="mt-2 pt-2 border-t" style={{ borderColor: 'rgba(245, 245, 240, 0.12)' }}>
