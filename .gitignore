@@ -77,7 +77,8 @@ navigation-added.png
 .playwright-mcp/
 
 # Kilo local config
-.kilo/
+.kilo/*
+!.kilo/AGENTS.md
 # Sensitive scripts with embedded keys
 scripts/run-migration*.mjs
 scripts/seed*.mjs
