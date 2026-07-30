@@ -11,7 +11,7 @@ import { Badge } from '@/lib/components/ui/badge';
 import { cn, formatPrice } from '@/lib/utils';
 import type { Property } from '@/lib/supabase/queries';
 import { PropertyCard } from './PropertyCard';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 interface ListingsGridProps {
   properties: Property[];
@@ -40,15 +40,46 @@ export function ListingsGrid({
   const tCommon = useTranslations('common');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
-  const [bedrooms, setBedrooms] = useState<string>('');
-  const [listingType, setListingType] = useState<'sale' | 'rent' | ''>('');
+  const [searchQuery, setSearchQuery] = useState(filters?.search || '');
+  const [selectedType, setSelectedType] = useState(filters?.property_type || '');
+  const [selectedLocation, setSelectedLocation] = useState(filters?.location || '');
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    typeof filters?.priceRange?.[0] === 'number' ? filters.priceRange[0] : 0,
+    typeof filters?.priceRange?.[1] === 'number' ? filters.priceRange[1] : 5000000,
+  ]);
+  const [bedrooms, setBedrooms] = useState<string>(filters?.bedrooms ? String(filters.bedrooms) : '');
+  const [listingType, setListingType] = useState<'sale' | 'rent' | ''>(filters?.listing_type || '');
+  const [areaRange, setAreaRange] = useState<[number, number]>([
+    typeof filters?.min_area === 'number' ? filters.min_area : 0,
+    typeof filters?.max_area === 'number' ? filters.max_area : 10000,
+  ]);
 
   const propertyTypes = ['apartment', 'villa', 'townhouse', 'penthouse', 'studio', 'commercial', 'land'];
   const locations = ['Dubai Marina', 'Downtown Dubai', 'Business Bay', 'Palm Jumeirah', 'Jumeirah Village', 'Dubai Hills', 'The Valley', 'City Walk', 'Dubai Investment Park', 'Palm Jebel Ali'];
+  const areaRanges = [
+    { label: 'Any Size', min: undefined, max: undefined },
+    { label: '< 500 sqft', min: 0, max: 500 },
+    { label: '500 - 1,000 sqft', min: 500, max: 1000 },
+    { label: '1,000 - 2,000 sqft', min: 1000, max: 2000 },
+    { label: '2,000 - 5,000 sqft', min: 2000, max: 5000 },
+    { label: '5,000+ sqft', min: 5000, max: undefined },
+  ];
+
+  useEffect(() => {
+    setSearchQuery(filters?.search || '');
+    setSelectedType(filters?.property_type || '');
+    setSelectedLocation(filters?.location || '');
+    setListingType(filters?.listing_type || '');
+    setBedrooms(filters?.bedrooms ? String(filters.bedrooms) : '');
+    setPriceRange([
+      typeof filters?.priceRange?.[0] === 'number' ? filters.priceRange[0] : 0,
+      typeof filters?.priceRange?.[1] === 'number' ? filters.priceRange[1] : 5000000,
+    ]);
+    setAreaRange([
+      typeof filters?.min_area === 'number' ? filters.min_area : 0,
+      typeof filters?.max_area === 'number' ? filters.max_area : 10000,
+    ]);
+  }, [filters]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
@@ -70,9 +101,12 @@ export function ListingsGrid({
       if (property.price && (property.price < priceRange[0] || property.price > priceRange[1])) {
         return false;
       }
+      if (property.area_sqft && (property.area_sqft < areaRange[0] || property.area_sqft > areaRange[1])) {
+        return false;
+      }
       return true;
     });
-  }, [properties, searchQuery, selectedType, selectedLocation, listingType, bedrooms, priceRange]);
+  }, [properties, searchQuery, selectedType, selectedLocation, listingType, bedrooms, priceRange, areaRange]);
 
   const handleFilterChange = (key: string, value: any) => {
     onFiltersChange?.({ ...filters, [key]: value });
@@ -85,10 +119,11 @@ export function ListingsGrid({
     setPriceRange([0, 5000000]);
     setBedrooms('');
     setListingType('');
+    setAreaRange([0, 10000]);
     onFiltersChange?.({});
   };
 
-  const hasActiveFilters = searchQuery || selectedType || selectedLocation || listingType || priceRange[0] > 0 || priceRange[1] < 5000000 || bedrooms;
+  const hasActiveFilters = searchQuery || selectedType || selectedLocation || listingType || priceRange[0] > 0 || priceRange[1] < 5000000 || bedrooms || areaRange[0] > 0 || areaRange[1] < 10000;
 
   return (
     <div className="space-y-10">
@@ -144,9 +179,9 @@ export function ListingsGrid({
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-3">{t('filters.priceRange') || 'Price Range'}</label>
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+             <div>
+               <label className="block text-sm font-medium mb-3">{t('filters.priceRange') || 'Price Range'}</label>
               <div className="flex items-center gap-4">
                 <input type="range" min="0" max="5000000" step="100000" value={priceRange[0]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([Math.min(val, priceRange[1] - 100000), priceRange[1]]); handleFilterChange('price_min', Math.min(val, priceRange[1] - 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
                 <input type="range" min="0" max="5000000" step="100000" value={priceRange[1]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([priceRange[0], Math.max(val, priceRange[0] + 100000)]); handleFilterChange('price_max', Math.max(val, priceRange[0] + 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
@@ -165,9 +200,43 @@ export function ListingsGrid({
                   <Hotel className="w-4 h-4" />
                   {t('filters.rent') || 'Rent'}
                 </button>
-              </div>
-            </div>
-          </div>
+               </div>
+             </div>
+             <div>
+               <label className="block text-sm font-medium mb-3">{t('filters.propertySize') || 'Property Size'}</label>
+               <Select
+                 value={areaRange[0] === 0 && areaRange[1] === 10000 ? '' : `${areaRange[0]}-${areaRange[1]}`}
+                 onValueChange={(v) => {
+                   const selected = areaRanges.find((r) => `${r.min}-${r.max}` === v);
+                   if (selected) {
+                     const next: [number, number] = [
+                       selected.min ?? 0,
+                       selected.max ?? 10000,
+                     ];
+                     setAreaRange(next);
+                     handleFilterChange('min_area', selected.min ?? undefined);
+                     handleFilterChange('max_area', selected.max ?? undefined);
+                   } else {
+                     setAreaRange([0, 10000]);
+                     handleFilterChange('min_area', undefined);
+                     handleFilterChange('max_area', undefined);
+                   }
+                 }}
+               >
+                 <SelectTrigger className="rounded-xl border-border/70">
+                   <SelectValue placeholder={t('filters.anySize') || 'Any Size'} />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="">{t('filters.anySize') || 'Any Size'}</SelectItem>
+                   {areaRanges.filter((r) => r.min !== undefined || r.max !== undefined).map((r) => (
+                     <SelectItem key={`${r.min}-${r.max}`} value={`${r.min}-${r.max}`}>
+                       {r.label}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+           </div>
 
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="text-destructive hover:text-destructive/80 rounded-xl"><CloseIcon className="w-4 h-4 mr-2" />{t('filters.reset')}</Button>

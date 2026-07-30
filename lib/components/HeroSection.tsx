@@ -125,7 +125,7 @@ export function HeroSection() {
       {/* Hero scroll track provides scrollable flight distance */}
       <div ref={heroTrackRef} className="relative" style={{ height: '350vh' }}>
         {/* Sticky 3D scene that stays locked to the viewport while scrolling the track */}
-        <section className="sticky top-0 h-screen w-full overflow-hidden pt-80" id="hero" style={{ zIndex: 1 }}>
+        <section className="sticky top-0 h-screen w-full overflow-hidden pt-16 sm:pt-24 lg:pt-32" id="hero" style={{ zIndex: 1 }}>
           {/* 3D Parallax Scene */}
           <div className="absolute inset-0" style={{ perspective: '1200px' }}>
             <div
@@ -177,7 +177,7 @@ export function HeroSection() {
 
           {/* Hero Content */}
           <motion.div
-            className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20"
+            className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16"
           >
             <div className="max-w-3xl lg:max-w-4xl lg:ml-8 xl:ml-16">
               <motion.div

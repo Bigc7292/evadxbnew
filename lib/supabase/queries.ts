@@ -254,6 +254,8 @@ export async function getProperties(filters?: {
   location?: string;
   min_price?: number;
   max_price?: number;
+  min_area?: number;
+  max_area?: number;
   bedrooms?: number;
   status?: string;
   limit?: number;
@@ -283,6 +285,12 @@ export async function getProperties(filters?: {
   }
   if (filters?.max_price) {
     query = query.lte('price', filters.max_price);
+  }
+  if (filters?.min_area) {
+    query = query.gte('area_sqft', filters.min_area);
+  }
+  if (filters?.max_area) {
+    query = query.lte('area_sqft', filters.max_area);
   }
   if (filters?.bedrooms) {
     query = query.gte('bedrooms', filters.bedrooms);

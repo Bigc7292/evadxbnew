@@ -162,7 +162,9 @@
       "active": "Active",
       "pending": "Pending",
       "sold": "Sold",
-      "draft": "Draft"
+      "draft": "Draft",
+      "propertySize": "Property Size",
+      "anySize": "Any Size"
     },
     "grid": {
       "noResults": "No properties found",
