@@ -232,7 +232,7 @@ export function ListingsGrid({
                  <SelectTrigger className="rounded-xl border-border/70">
                    <SelectValue placeholder={t('filters.anySize') || 'Any Size'} />
                  </SelectTrigger>
-                 <SelectContent>
+                 <SelectContent className="z-[60]">
                    <SelectItem value="">{t('filters.anySize') || 'Any Size'}</SelectItem>
                    {areaRanges.filter((r) => r.min !== undefined || r.max !== undefined).map((r) => (
                      <SelectItem key={`${r.min}-${r.max}`} value={`${r.min}-${r.max}`}>

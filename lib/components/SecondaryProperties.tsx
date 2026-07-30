@@ -9,7 +9,7 @@ interface SecondaryPropertiesClientProps {
   limit?: number;
 }
 
-export function SecondaryPropertiesClient({ locale, limit = 12 }: SecondaryPropertiesClientProps) {
+export function SecondaryPropertiesClient({ locale, limit = 100 }: SecondaryPropertiesClientProps) {
   const { data: propertiesResult, isLoading } = useQuery({
     queryKey: ['secondary-properties', limit],
     queryFn: async () => {

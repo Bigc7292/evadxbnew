@@ -175,7 +175,7 @@ export function OffPlanFilterBar({ totalCount }: OffPlanFilterBarProps) {
               <SelectTrigger className="pl-9 rounded-xl border-border/70">
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60]">
                 <SelectItem value="">All locations</SelectItem>
                 {LOCATIONS.map((loc) => (
                   <SelectItem key={loc} value={loc}>{loc}</SelectItem>
@@ -190,7 +190,7 @@ export function OffPlanFilterBar({ totalCount }: OffPlanFilterBarProps) {
               <SelectTrigger className="pl-9 rounded-xl border-border/70">
                 <SelectValue placeholder="Property type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60]">
                 <SelectItem value="">All types</SelectItem>
                 {PROPERTY_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>
@@ -205,7 +205,7 @@ export function OffPlanFilterBar({ totalCount }: OffPlanFilterBarProps) {
               <SelectTrigger className="pl-9 rounded-xl border-border/70">
                 <SelectValue placeholder="Bedrooms" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60]">
                 <SelectItem value="">Any bedrooms</SelectItem>
                 {BEDROOMS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
