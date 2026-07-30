@@ -39,20 +39,27 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 const BUCKET_NAME = 'property-images';
 const STORAGE_BASE_URL = `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}`;
-const DELAY_MS = 600;
-const MAX_RETRIES = 3;
+const WORDPRESS_SITE_URL = 'https://evadxb.com';
+const WORDPRESS_UPLOADS_URL = `${WORDPRESS_SITE_URL}/wp-content/uploads`;
+const MAX_RETRIES = 2;
+const PROPERTY_CONCURRENCY = 4;
+const IMAGE_CONCURRENCY = 4;
 
 function getExtensionFromUrl(url: string): string {
-  const parsed = new URL(url);
-  const pathname = parsed.pathname;
-  const ext = path.extname(pathname).toLowerCase();
-  if (ext && ext.length <= 6) return ext;
-  const contentType = parsed.searchParams.get('content-type') || '';
-  if (contentType.includes('png')) return '.png';
-  if (contentType.includes('gif')) return '.gif';
-  if (contentType.includes('webp')) return '.webp';
-  if (contentType.includes('svg')) return '.svg';
-  return '.jpg';
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname;
+    const ext = path.extname(pathname).toLowerCase();
+    if (ext && ext.length <= 6) return ext;
+    const contentType = parsed.searchParams.get('content-type') || '';
+    if (contentType.includes('png')) return '.png';
+    if (contentType.includes('gif')) return '.gif';
+    if (contentType.includes('webp')) return '.webp';
+    if (contentType.includes('svg')) return '.svg';
+    return '.jpg';
+  } catch {
+    return '.jpg';
+  }
 }
 
 function getMimeType(ext: string): string {
@@ -73,8 +80,24 @@ function isAlreadyOnStorage(url: string | null): boolean {
   return url.includes(`${BUCKET_NAME}/`);
 }
 
+function normalizeImageUrl(url: string | null): string | null {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) {
+    const normalized = `${WORDPRESS_SITE_URL}${url}`;
+    return normalized;
+  }
+  return `${WORDPRESS_UPLOADS_URL}/${url}`;
+}
+
+function isSvgUrl(url: string): boolean {
+  const lowered = url.toLowerCase();
+  return lowered.endsWith('.svg') || lowered.includes('.svg?');
+}
+
 function downloadImage(url: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
+    let buffer = Buffer.alloc(0);
     const parsed = new URL(url);
     const options = {
       hostname: parsed.hostname,
@@ -98,9 +121,10 @@ function downloadImage(url: string): Promise<Buffer> {
         reject(new Error(`HTTP ${res.statusCode} for ${url}`));
         return;
       }
-      const chunks: Buffer[] = [];
-      res.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
+      res.on('data', (chunk) => {
+        buffer = Buffer.concat([buffer, Buffer.from(chunk)]);
+      });
+      res.on('end', () => resolve(buffer));
     });
 
     req.on('error', reject);
@@ -118,7 +142,7 @@ async function uploadImage(
   filePath: string,
   mimeType: string
 ): Promise<boolean> {
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from(BUCKET_NAME)
     .upload(filePath, buffer, {
       contentType: mimeType,
@@ -137,6 +161,35 @@ function getPublicUrl(filePath: string): string {
   return `${STORAGE_BASE_URL}/${filePath}`;
 }
 
+async function processImageTask(
+  task: {
+    type: 'hero' | 'gallery';
+    propertyId: string;
+    slug: string;
+    index?: number;
+    sourceUrl: string;
+    storagePath: string;
+  }
+): Promise<{ success: boolean; publicUrl?: string }> {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const buffer = await downloadImage(task.sourceUrl);
+      const ext = getExtensionFromUrl(task.sourceUrl);
+      const mimeType = getMimeType(ext);
+      const success = await uploadImage(buffer, task.storagePath, mimeType);
+      if (success) {
+        return { success: true, publicUrl: getPublicUrl(task.storagePath) };
+      }
+    } catch (err: any) {
+      console.error(`    ${task.type}${task.index !== undefined ? `[${task.index}]` : ''} attempt ${attempt} failed: ${err.message}`);
+      if (attempt === MAX_RETRIES) {
+        return { success: false };
+      }
+    }
+  }
+  return { success: false };
+}
+
 async function processProperty(
   property: {
     id: string;
@@ -145,130 +198,150 @@ async function processProperty(
     gallery_images: string[] | null;
   }
 ): Promise<{ updated: boolean; heroUpdated: boolean; galleryUpdated: number; failed: number }> {
-  const { id, slug, hero_image_url, gallery_images } = property;
-  let updated = false;
+  const { id, slug } = property;
+  const heroImageUrl = property.hero_image_url;
+  const galleryImages = property.gallery_images || [];
+  
+  const tasks: Array<{
+    type: 'hero' | 'gallery';
+    propertyId: string;
+    slug: string;
+    index?: number;
+    sourceUrl: string;
+    storagePath: string;
+  }> = [];
+
+  if (heroImageUrl && !isAlreadyOnStorage(heroImageUrl)) {
+    const normalizedHeroUrl = normalizeImageUrl(heroImageUrl);
+    if (!normalizedHeroUrl) {
+      console.error(`    Invalid hero URL for ${slug}: ${heroImageUrl}`);
+    } else if (isSvgUrl(normalizedHeroUrl)) {
+      console.log(`    Skipping unsupported SVG hero for ${slug}`);
+    } else {
+      try {
+        new URL(normalizedHeroUrl);
+        const ext = getExtensionFromUrl(normalizedHeroUrl);
+        tasks.push({
+          type: 'hero',
+          propertyId: id,
+          slug,
+          sourceUrl: normalizedHeroUrl,
+          storagePath: `properties/${slug}/hero${ext}`
+        });
+      } catch {
+        console.error(`    Invalid hero URL for ${slug}: ${heroImageUrl}`);
+      }
+    }
+  }
+
+  for (let i = 0; i < galleryImages.length; i++) {
+    const imgUrl = galleryImages[i];
+    if (imgUrl && !isAlreadyOnStorage(imgUrl)) {
+      const normalizedImgUrl = normalizeImageUrl(imgUrl);
+      if (!normalizedImgUrl) {
+        console.error(`    Invalid gallery URL for ${slug}[${i}]: ${imgUrl}`);
+        continue;
+      }
+      if (isSvgUrl(normalizedImgUrl)) {
+        console.log(`    Skipping unsupported SVG gallery[${i}] for ${slug}`);
+        continue;
+      }
+      try {
+        new URL(normalizedImgUrl);
+        const ext = getExtensionFromUrl(normalizedImgUrl);
+        tasks.push({
+          type: 'gallery',
+          propertyId: id,
+          slug,
+          index: i,
+          sourceUrl: normalizedImgUrl,
+          storagePath: `properties/${slug}/gallery_${i}${ext}`
+        });
+      } catch {
+        console.error(`    Invalid gallery URL for ${slug}[${i}]: ${imgUrl}`);
+      }
+    }
+  }
+
+  if (tasks.length === 0) {
+    return { updated: false, heroUpdated: false, galleryUpdated: 0, failed: 0 };
+  }
+
+  const results = new Map<string, { success: boolean; publicUrl?: string }>();
+  const queue = [...tasks];
+  const active = new Set<Promise<void>>();
+
+  while (queue.length > 0 || active.size > 0) {
+    while (active.size < IMAGE_CONCURRENCY && queue.length > 0) {
+      const task = queue.shift()!;
+      const key = `${task.type}-${task.index !== undefined ? task.index : 'hero'}`;
+      const promise = processImageTask(task).then(result => {
+        results.set(key, result);
+        active.delete(promise);
+      });
+      active.add(promise);
+    }
+
+    if (active.size > 0) {
+      await Promise.race(active);
+    }
+  }
+
+  await Promise.all(active);
+
   let heroUpdated = false;
   let galleryUpdated = 0;
   let failed = 0;
+  let updatedHeroUrl = heroImageUrl;
+  const updatedGallery = [...galleryImages];
 
-  const heroPath = `properties/${slug}/hero.jpg`;
-
-  if (hero_image_url && !isAlreadyOnStorage(hero_image_url)) {
-    console.log(`  Downloading hero image...`);
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const buffer = await downloadImage(hero_image_url);
-        const ext = getExtensionFromUrl(hero_image_url);
-        const mimeType = getMimeType(ext);
-        const finalPath = `properties/${slug}/hero${ext}`;
-        const success = await uploadImage(buffer, finalPath, mimeType);
-        if (success) {
-          const publicUrl = getPublicUrl(finalPath);
-          const { error: updateError } = await supabase
-            .from('properties')
-            .update({ hero_image_url: publicUrl })
-            .eq('id', id);
-          if (updateError) {
-            console.error(`    Hero DB update failed: ${updateError.message}`);
-            failed++;
-          } else {
-            console.log(`    Hero uploaded: ${finalPath}`);
-            heroUpdated = true;
-            updated = true;
-          }
-          break;
-        }
-      } catch (err: any) {
-        console.error(`    Hero download/upload attempt ${attempt} failed: ${err.message}`);
-        if (attempt === MAX_RETRIES) {
-          console.error(`    Skipping hero image for ${slug}`);
-          failed++;
-        }
+  results.forEach((result, key) => {
+    if (key.startsWith('hero')) {
+      if (result.success && result.publicUrl) {
+        heroUpdated = true;
+        updatedHeroUrl = result.publicUrl;
+      } else {
+        failed++;
       }
-      if (attempt < MAX_RETRIES) {
-        await new Promise((r) => setTimeout(r, DELAY_MS * attempt));
+    } else if (key.startsWith('gallery')) {
+      if (result.success && result.publicUrl) {
+        galleryUpdated++;
+        const idx = parseInt(key.split('-')[1], 10);
+        if (!isNaN(idx)) {
+          updatedGallery[idx] = result.publicUrl;
+        }
+      } else {
+        failed++;
       }
     }
-  } else if (hero_image_url && isAlreadyOnStorage(hero_image_url)) {
-    console.log(`  Hero already on storage, skipping`);
-  }
+  });
 
-  await new Promise((r) => setTimeout(r, DELAY_MS));
+  const needsDbUpdate = heroUpdated || galleryUpdated > 0;
 
-  if (gallery_images && gallery_images.length > 0) {
-    const currentGallery = gallery_images as string[];
-    const updatedGallery: string[] = [];
+  if (needsDbUpdate) {
+    const updatePayload: Record<string, unknown> = {};
+    if (heroUpdated) updatePayload.hero_image_url = updatedHeroUrl;
+    if (galleryUpdated > 0) updatePayload.gallery_images = updatedGallery;
 
-    for (let i = 0; i < currentGallery.length; i++) {
-      const imgUrl = currentGallery[i];
-      const galleryPath = `properties/${slug}/gallery_${i}.jpg`;
+    const { error: updateError } = await supabase
+      .from('properties')
+      .update(updatePayload)
+      .eq('id', id);
 
-      if (isAlreadyOnStorage(imgUrl)) {
-        console.log(`  Gallery[${i}] already on storage, skipping`);
-        updatedGallery.push(imgUrl);
-        continue;
-      }
-
-      console.log(`  Downloading gallery[${i}]...`);
-      let uploaded = false;
-
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          const buffer = await downloadImage(imgUrl);
-          const ext = getExtensionFromUrl(imgUrl);
-          const mimeType = getMimeType(ext);
-          const finalPath = `properties/${slug}/gallery_${i}${ext}`;
-          const success = await uploadImage(buffer, finalPath, mimeType);
-          if (success) {
-            const publicUrl = getPublicUrl(finalPath);
-            updatedGallery.push(publicUrl);
-            console.log(`    Gallery[${i}] uploaded: ${finalPath}`);
-            galleryUpdated++;
-            uploaded = true;
-            updated = true;
-            break;
-          }
-        } catch (err: any) {
-          console.error(
-            `    Gallery[${i}] attempt ${attempt} failed: ${err.message}`
-          );
-          if (attempt === MAX_RETRIES) {
-            console.error(`    Skipping gallery[${i}] for ${slug}`);
-            failed++;
-            updatedGallery.push(imgUrl);
-          }
-        }
-        if (!uploaded && attempt < MAX_RETRIES) {
-          await new Promise((r) => setTimeout(r, DELAY_MS * attempt));
-        }
-      }
-
-      await new Promise((r) => setTimeout(r, DELAY_MS));
-    }
-
-    if (updatedGallery.length > 0) {
-      const { error: galleryUpdateError } = await supabase
-        .from('properties')
-        .update({ gallery_images: updatedGallery })
-        .eq('id', id);
-
-      if (galleryUpdateError) {
-        console.error(
-          `    Gallery DB update failed: ${galleryUpdateError.message}`
-        );
-      }
+    if (updateError) {
+      console.error(`    DB update failed for ${slug}: ${updateError.message}`);
     }
   }
 
-  return { updated, heroUpdated, galleryUpdated, failed };
+  return { updated: needsDbUpdate, heroUpdated, galleryUpdated, failed };
 }
 
 async function main() {
   console.log('=== Property Images Upload Script ===');
   console.log(`Supabase URL: ${supabaseUrl}`);
   console.log(`Bucket: ${BUCKET_NAME}`);
-  console.log(`Storage Base URL: ${STORAGE_BASE_URL}`);
-  console.log('');
+  console.log(`Property concurrency: ${PROPERTY_CONCURRENCY}`);
+  console.log(`Image concurrency per property: ${IMAGE_CONCURRENCY}\n`);
 
   const { data: properties, error: fetchError } = await supabase
     .from('properties')
@@ -285,46 +358,56 @@ async function main() {
     return;
   }
 
-  console.log(`Found ${properties.length} properties\n`);
+  const needsProcessing = properties.filter(p => {
+    const hasExternalHero = p.hero_image_url && !isAlreadyOnStorage(p.hero_image_url);
+    const hasExternalGallery = p.gallery_images && p.gallery_images.some((img: string) => img && !isAlreadyOnStorage(img));
+    return hasExternalHero || hasExternalGallery;
+  });
+
+  console.log(`Total properties: ${properties.length}`);
+  console.log(`Properties needing upload: ${needsProcessing.length}\n`);
 
   let totalUpdated = 0;
   let totalHeroUpdated = 0;
   let totalGalleryUpdated = 0;
   let totalFailed = 0;
-  let totalSkipped = 0;
+  let totalSkipped = properties.length - needsProcessing.length;
 
-  for (let i = 0; i < properties.length; i++) {
-    const prop = properties[i];
-    console.log(`[${i + 1}/${properties.length}] ${prop.slug}`);
+  const queue = [...needsProcessing];
+  const active = new Set<Promise<void>>();
+  let processed = 0;
 
-    const hasExternalHero = prop.hero_image_url && !isAlreadyOnStorage(prop.hero_image_url);
-    const hasExternalGallery =
-      prop.gallery_images &&
-      prop.gallery_images.some((img: string) => !isAlreadyOnStorage(img));
-
-    if (!hasExternalHero && !hasExternalGallery) {
-      console.log('  All images already on storage, skipping\n');
-      totalSkipped++;
-      continue;
+  while (queue.length > 0 || active.size > 0) {
+    while (active.size < PROPERTY_CONCURRENCY && queue.length > 0) {
+      const prop = queue.shift()!;
+      const promise = processProperty(prop).then(result => {
+        processed++;
+        totalUpdated += result.updated ? 1 : 0;
+        totalHeroUpdated += result.heroUpdated ? 1 : 0;
+        totalGalleryUpdated += result.galleryUpdated;
+        totalFailed += result.failed;
+        console.log(`[${processed}/${needsProcessing.length}] ${prop.slug} -> hero=${result.heroUpdated ? 'updated' : 'skipped'}, gallery=${result.galleryUpdated} updated, failed=${result.failed}`);
+        active.delete(promise);
+      }).catch(err => {
+        processed++;
+        console.error(`[${processed}/${needsProcessing.length}] ${prop.slug} -> fatal: ${err.message}`);
+        totalFailed++;
+        active.delete(promise);
+      });
+      active.add(promise);
     }
 
-    const result = await processProperty(prop);
-    totalUpdated += result.updated ? 1 : 0;
-    totalHeroUpdated += result.heroUpdated ? 1 : 0;
-    totalGalleryUpdated += result.galleryUpdated;
-    totalFailed += result.failed;
-
-    console.log(`  Result: hero=${result.heroUpdated ? 'updated' : 'skipped'}, gallery=${result.galleryUpdated} updated, failed=${result.failed}\n`);
-
-    if (i < properties.length - 1) {
-      await new Promise((r) => setTimeout(r, DELAY_MS));
+    if (active.size > 0) {
+      await Promise.race(active);
     }
   }
 
-  console.log('=== Summary ===');
+  await Promise.all(active);
+
+  console.log('\n=== Summary ===');
   console.log(`Total properties: ${properties.length}`);
-  console.log(`Properties with updates: ${totalUpdated}`);
   console.log(`Properties skipped (already on storage): ${totalSkipped}`);
+  console.log(`Properties updated: ${totalUpdated}`);
   console.log(`Hero images uploaded: ${totalHeroUpdated}`);
   console.log(`Gallery images uploaded: ${totalGalleryUpdated}`);
   console.log(`Failed images: ${totalFailed}`);

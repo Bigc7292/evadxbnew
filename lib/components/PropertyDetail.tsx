@@ -280,7 +280,7 @@ export function PropertyDetail({ property, locale }: PropertyDetailProps) {
                   </TabsContent>
 
                   <TabsContent value="location" className="space-y-6">
-                    <ErrorBoundary fallback={<MapErrorFallback message={t('propertyDetail.mapLoadFailed')} latitude={property.latitude} longitude={property.longitude} />}>
+                    <ErrorBoundary fallback={<MapErrorFallback message={t('propertyDetail.mapLoadFailed')} latitude={property.latitude ?? undefined} longitude={property.longitude ?? undefined} />}>
                       <div className="grid lg:grid-cols-2 gap-6">
                         <div className="lg:col-span-2">
                           <div className="bg-card border border-border rounded-3xl overflow-hidden luxury-shadow">

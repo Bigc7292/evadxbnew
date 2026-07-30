@@ -1,15 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-wc-webhook-signature, x-wc-webhook-topic',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
+  const requestOrigin = req.headers.get('origin');
+  const cors = getCorsHeaders(requestOrigin);
+  
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: cors });
   }
 
   try {
@@ -17,10 +15,11 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify WooCommerce webhook signature
     const signature = req.headers.get('x-wc-webhook-signature');
     const topic = req.headers.get('x-wc-webhook-topic');
     const webhookSecret = Deno.env.get('WOOCOMMERCE_WEBHOOK_SECRET');
+
+    let payload: any;
 
     if (webhookSecret && signature) {
       const body = await req.text();
@@ -41,14 +40,14 @@ serve(async (req) => {
         console.error('WooCommerce webhook signature verification failed');
         return new Response(JSON.stringify({ error: 'Invalid signature' }), {
           status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors, 'Content-Type': 'application/json' },
         });
       }
 
-      const payload = JSON.parse(body);
+      payload = JSON.parse(body);
+    } else {
+      payload = await req.json();
     }
-
-    const payload = await req.json();
 
     // Handle different webhook topics
     switch (topic) {
@@ -69,7 +68,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
@@ -86,7 +85,7 @@ serve(async (req) => {
         .insert({
           source: 'woocommerce',
           event_type: `webhook_failed_${topic}`,
-          payload: await req.json().catch(() => ({})),
+          payload: { error: 'request body already consumed' },
           processed: false,
           error: error.message,
         });
@@ -95,7 +94,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
@@ -223,6 +222,5 @@ function generateSlug(title: string): string {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  slug += `-${Date.now()}`;
   return slug;
 }

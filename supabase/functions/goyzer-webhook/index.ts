@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 interface GoyzerPayload {
   listing_id: string;
@@ -42,8 +42,11 @@ interface GoyzerPayload {
 }
 
 Deno.serve(async (req: Request) => {
+  const requestOrigin = req.headers.get('origin');
+  const cors = getCorsHeaders(requestOrigin);
+  
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: cors });
   }
 
   try {
@@ -75,7 +78,7 @@ Deno.serve(async (req: Request) => {
       if (!isValid) {
         return new Response(
           JSON.stringify({ error: 'Invalid signature' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          { headers: { ...cors, 'Content-Type': 'application/json' }, status: 401 }
         );
       }
       
@@ -83,7 +86,7 @@ Deno.serve(async (req: Request) => {
       await processGoyzerPayload(supabase, payload);
       return new Response(
         JSON.stringify({ success: true, message: 'Processed' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        { headers: { ...cors, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
@@ -93,13 +96,13 @@ Deno.serve(async (req: Request) => {
     
     return new Response(
       JSON.stringify({ success: true, message: 'Processed' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      { headers: { ...cors, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
     console.error('Goyzer webhook error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { headers: { ...cors, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
@@ -150,7 +153,7 @@ async function processGoyzerPayload(supabase: any, payload: GoyzerPayload) {
   // Upsert property
   const { data: property, error: propertyError } = await supabase
     .from('properties')
-    .upsert(propertyData, { onConflict: 'slug' })
+    .upsert(propertyData, { onConflict: 'goyzer_listing_id' })
     .select()
     .single();
 
@@ -201,7 +204,6 @@ function generateSlug(title: string): string {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  slug += `-${Date.now()}`;
   return slug;
 }
 

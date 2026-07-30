@@ -1,9 +1,12 @@
-import { createAdminClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/app/api/admin/_auth';
 import { NextRequest, NextResponse } from 'next/server';
+import { slugify } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createAdminClient();
+    const auth = await requireAdmin(request);
+    if (auth instanceof NextResponse) return auth;
+    const supabase = auth.supabase;
     const { searchParams } = new URL(request.url);
     
     const page = parseInt(searchParams.get('page') || '1');
@@ -55,15 +58,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createAdminClient();
+    const auth = await requireAdmin(request);
+    if (auth instanceof NextResponse) return auth;
+    const supabase = auth.supabase;
     const body = await request.json();
 
     if (!body.slug && body.first_name && body.last_name) {
-      body.slug = `${body.first_name}-${body.last_name}`
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+      body.slug = slugify(`${body.first_name} ${body.last_name}`);
     }
 
     const { data, error } = await supabase

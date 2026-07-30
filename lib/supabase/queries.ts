@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { normalizePropertyPrice } from '@/lib/utils';
+import { createCacheKey, getCached, setCached } from '@/lib/cache';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -231,6 +232,10 @@ function normalizeProperty(p: any): Property {
 }
 
 export async function getPropertyBySlug(slug: string) {
+  const cacheKey = createCacheKey(['property', slug]);
+  const cached = getCached<Property>(cacheKey);
+  if (cached) return cached;
+
   const { data, error } = await supabase
     .from('properties')
     .select('*')
@@ -238,7 +243,9 @@ export async function getPropertyBySlug(slug: string) {
     .single();
 
   if (error) throw error;
-  return normalizeProperty(data) as Property;
+  const result = normalizeProperty(data) as Property;
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
 }
 
 export async function getProperties(filters?: {
@@ -253,6 +260,10 @@ export async function getProperties(filters?: {
   offset?: number;
   featured_only?: boolean;
 }) {
+  const cacheKey = createCacheKey(['properties', filters]);
+  const cached = getCached<{ properties: Property[]; totalCount: number }>(cacheKey);
+  if (cached) return cached;
+
   let query = supabase
     .from('properties')
     .select('*', { count: 'exact' })
@@ -291,13 +302,19 @@ export async function getProperties(filters?: {
 
   const { data, error, count } = await query;
   if (error) throw error;
-  return { properties: (data ?? []).map(normalizeProperty) as Property[], totalCount: count ?? 0 };
+  const result = { properties: (data ?? []).map(normalizeProperty) as Property[], totalCount: count ?? 0 };
+  setCached(cacheKey, result, 30 * 1000);
+  return result;
 }
 
 export async function getAgents(filters?: {
   team_leads_only?: boolean;
   limit?: number;
 }) {
+  const cacheKey = createCacheKey(['agents', filters]);
+  const cached = getCached<Agent[]>(cacheKey);
+  if (cached) return cached;
+
   let query = supabase
     .from('agents')
     .select('*')
@@ -313,10 +330,16 @@ export async function getAgents(filters?: {
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []).map(normalizeAgent) as Agent[];
+  const result = (data ?? []).map(normalizeAgent) as Agent[];
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
 }
 
 export async function getAgentBySlug(slug: string) {
+  const cacheKey = createCacheKey(['agent', slug]);
+  const cached = getCached<Agent>(cacheKey);
+  if (cached) return cached;
+
   const { data, error } = await supabase
     .from('agents')
     .select('*')
@@ -324,7 +347,9 @@ export async function getAgentBySlug(slug: string) {
     .single();
 
   if (error) throw error;
-  return normalizeAgent(data) as Agent;
+  const result = normalizeAgent(data) as Agent;
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
 }
 
 export async function getBlogPosts(filters?: {
@@ -333,6 +358,10 @@ export async function getBlogPosts(filters?: {
   limit?: number;
   offset?: number;
 }) {
+  const cacheKey = createCacheKey(['blog_posts', filters]);
+  const cached = getCached<BlogPost[]>(cacheKey);
+  if (cached) return cached;
+
   let query = supabase
     .from('blog_posts')
     .select('*')
@@ -353,10 +382,16 @@ export async function getBlogPosts(filters?: {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data as BlogPost[];
+  const result = data as BlogPost[];
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
 }
 
 export async function getBlogPostBySlug(slug: string) {
+  const cacheKey = createCacheKey(['blog_post', slug]);
+  const cached = getCached<BlogPost>(cacheKey);
+  if (cached) return cached;
+
   const { data, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -364,17 +399,25 @@ export async function getBlogPostBySlug(slug: string) {
     .single();
 
   if (error) throw error;
-  return data as BlogPost;
+  const result = data as BlogPost;
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
 }
 
 export async function getSiteConfig() {
+  const cacheKey = createCacheKey(['site_config']);
+  const cached = getCached<SiteConfig>(cacheKey);
+  if (cached) return cached;
+
   const { data, error } = await supabase
     .from('site_config')
     .select('*')
     .single();
 
   if (error) throw error;
-  return data as SiteConfig;
+  const result = data as SiteConfig;
+  setCached(cacheKey, result, 5 * 60 * 1000);
+  return result;
 }
 
 export async function createLead(lead: Omit<Lead, 'id' | 'created_at' | 'updated_at' | 'status'>) {

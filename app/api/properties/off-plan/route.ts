@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getProperties } from '@/lib/supabase/queries';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -26,7 +27,11 @@ export async function GET(request: Request) {
       offset,
     });
 
-    return NextResponse.json({ properties: result.properties, count: result.totalCount });
+    return NextResponse.json({ properties: result.properties, count: result.totalCount }, {
+      headers: {
+        'Cache-Control': 's-maxage=30, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
     console.error('Failed to fetch properties:', error);
     return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 });

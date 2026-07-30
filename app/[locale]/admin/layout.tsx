@@ -315,7 +315,12 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
 }
 
 import { Search, Bell, Sun, Moon, TrendingUp } from 'lucide-react';
+import { ErrorBoundary } from '@/lib/components/ErrorBoundary';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <AdminSidebar>{children}</AdminSidebar>;
+  return (
+    <ErrorBoundary>
+      <AdminSidebar>{children}</AdminSidebar>
+    </ErrorBoundary>
+  );
 }
