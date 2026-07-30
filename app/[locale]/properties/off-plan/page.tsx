@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getProperties } from '@/lib/supabase/queries';
 import { InfinitePropertyGrid } from '@/lib/components/InfinitePropertyGrid';
 import { CustomCursor } from '@/lib/components/CustomCursor';
-import { OffPlanFilterBar } from '@/lib/components/OffPlanFilterBar';
+import { PageFilterBar } from '@/lib/components/PageFilterBar';
 
 export const metadata: Metadata = {
   title: 'Off-Plan Properties | EVA Real Estate Dubai',
@@ -51,16 +51,15 @@ export default async function OffPlanPropertiesPage({ params, searchParams }: Pa
   return (
     <>
       <CustomCursor />
-      <section className="px-4 sm:px-6 lg:px-8 py-16" id="properties">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <OffPlanFilterBar totalCount={totalCount} />
+      <section className="px-4 sm:px-6 lg:px-8 py-0" id="properties">
+        <PageFilterBar title="Off-Plan Properties" totalCount={totalCount} basePath={`/${locale}/properties/off-plan`} defaultQuery={filters}>
           <InfinitePropertyGrid
             initialProperties={initialProperties}
             locale={locale}
             totalCount={totalCount}
             filters={filters}
           />
-        </div>
+        </PageFilterBar>
       </section>
     </>
   );

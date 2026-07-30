@@ -23,6 +23,7 @@ interface ListingsGridProps {
   filters?: Record<string, any>;
   onFiltersChange?: (filters: Record<string, any>) => void;
   defaultFilters?: Record<string, any>;
+  disableFilters?: boolean;
 }
 
 export function ListingsGrid({
@@ -35,6 +36,7 @@ export function ListingsGrid({
   filters = {},
   onFiltersChange,
   defaultFilters = {},
+  disableFilters = false,
 }: ListingsGridProps) {
   const t = useTranslations('properties');
   const tCommon = useTranslations('common');
@@ -88,6 +90,9 @@ export function ListingsGrid({
   }, [filtersKey]);
 
   const filteredProperties = useMemo(() => {
+    if (disableFilters) {
+      return properties;
+    }
     return properties.filter((property) => {
       if (searchQuery && !property.title.toLowerCase().includes(searchQuery.toLowerCase()) && !property.location.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
@@ -112,7 +117,7 @@ export function ListingsGrid({
       }
       return true;
     });
-  }, [properties, searchQuery, selectedType, selectedLocation, listingType, bedrooms, priceRange, areaRange]);
+  }, [properties, searchQuery, selectedType, selectedLocation, listingType, bedrooms, priceRange, areaRange, disableFilters]);
 
   const handleFilterChange = (key: string, value: any) => {
     onFiltersChange?.({ ...filters, [key]: value });
@@ -138,117 +143,121 @@ export function ListingsGrid({
           <h2 className="font-heading text-3xl font-bold gradient-gold">{t('subtitle')}</h2>
           <p className="text-muted-foreground mt-1">{filteredProperties.length > 0 ? t('resultsFound', { count: filteredProperties.length }) : t('resultsShowing', { count: filteredProperties.length })}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-muted/80 rounded-2xl p-1 border border-border/60">
-            <button onClick={() => setViewMode('grid')} className={cn('p-2 rounded-xl transition-colors', viewMode === 'grid' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')} aria-label="Grid view">
-              <LayoutGrid className="w-5 h-5" />
-            </button>
-            <button onClick={() => setViewMode('list')} className={cn('p-2 rounded-xl transition-colors', viewMode === 'list' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')} aria-label="List view">
-              <List className="w-5 h-5" />
-            </button>
+        {!disableFilters && (
+          <div className="flex items-center gap-3">
+            <div className="flex bg-muted/80 rounded-2xl p-1 border border-border/60">
+              <button onClick={() => setViewMode('grid')} className={cn('p-2 rounded-xl transition-colors', viewMode === 'grid' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')} aria-label="Grid view">
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+              <button onClick={() => setViewMode('list')} className={cn('p-2 rounded-xl transition-colors', viewMode === 'list' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')} aria-label="List view">
+                <List className="w-5 h-5" />
+              </button>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn('gap-2 rounded-xl border-border/70', hasActiveFilters && 'border-accent text-accent')}>
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('filters.title')}</span>
+              {hasActiveFilters && <Badge variant="success" className="ml-1">{Object.keys(filters).length + (listingType ? 1 : 0)}</Badge>}
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn('gap-2 rounded-xl border-border/70', hasActiveFilters && 'border-accent text-accent')}>
-            <Filter className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('filters.title')}</span>
-            {hasActiveFilters && <Badge variant="success" className="ml-1">{Object.keys(filters).length + (listingType ? 1 : 0)}</Badge>}
-          </Button>
-        </div>
+        )}
       </div>
 
-      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: showFilters ? 1 : 0, height: showFilters ? 'auto' : 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
-        <div className="bg-card border border-border rounded-3xl p-6 space-y-6 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder={t('filters.search')} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); handleFilterChange('search', e.target.value); }} className="pl-10 rounded-xl border-border/70" />
-            </div>
-            <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); handleFilterChange('property_type', v); }}>
-              <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.propertyType')} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t('filters.allTypes')}</SelectItem>
-                {propertyTypes.map(type => (<SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedLocation} onValueChange={(v) => { setSelectedLocation(v); handleFilterChange('location', v); }}>
-              <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.location')} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t('filters.allLocations')}</SelectItem>
-                {locations.map(loc => (<SelectItem key={loc} value={loc}>{loc}</SelectItem>))}
-              </SelectContent>
-            </Select>
-            <Select value={bedrooms} onValueChange={(v) => { setBedrooms(v); handleFilterChange('bedrooms', v); }}>
-              <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.bedrooms')} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t('filters.anyBeds')}</SelectItem>
-                {[1, 2, 3, 4, 5, 6, 7].map(b => (<SelectItem key={b} value={b.toString()}>{b}+ {tCommon('bedrooms')}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
-
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-             <div>
-               <label className="block text-sm font-medium mb-3">{t('filters.priceRange') || 'Price Range'}</label>
-              <div className="flex items-center gap-4">
-                <input type="range" min="0" max="5000000" step="100000" value={priceRange[0]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([Math.min(val, priceRange[1] - 100000), priceRange[1]]); handleFilterChange('price_min', Math.min(val, priceRange[1] - 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
-                <input type="range" min="0" max="5000000" step="100000" value={priceRange[1]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([priceRange[0], Math.max(val, priceRange[0] + 100000)]); handleFilterChange('price_max', Math.max(val, priceRange[0] + 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
-                <div className="w-32 text-right text-sm font-medium gradient-gold">{priceRange[1] >= 5000000 ? 'AED 5M+' : `${(priceRange[1] / 1000000).toFixed(1)}M`}</div>
+      {!disableFilters && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: showFilters ? 1 : 0, height: showFilters ? 'auto' : 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
+          <div className="bg-card border border-border rounded-3xl p-6 space-y-6 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder={t('filters.search')} value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); handleFilterChange('search', e.target.value); }} className="pl-10 rounded-xl border-border/70" />
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mt-2"><span>AED 0</span><span>AED 5M+</span></div>
+              <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); handleFilterChange('property_type', v); }}>
+                <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.propertyType')} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{t('filters.allTypes')}</SelectItem>
+                  {propertyTypes.map(type => (<SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedLocation} onValueChange={(v) => { setSelectedLocation(v); handleFilterChange('location', v); }}>
+                <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.location')} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{t('filters.allLocations')}</SelectItem>
+                  {locations.map(loc => (<SelectItem key={loc} value={loc}>{loc}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={bedrooms} onValueChange={(v) => { setBedrooms(v); handleFilterChange('bedrooms', v); }}>
+                <SelectTrigger className="rounded-xl border-border/70"><SelectValue placeholder={t('filters.bedrooms')} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{t('filters.anyBeds')}</SelectItem>
+                  {[1, 2, 3, 4, 5, 6, 7].map(b => (<SelectItem key={b} value={b.toString()}>{b}+ {tCommon('bedrooms')}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-3">{t('filters.listingType') || 'Listing Type'}</label>
-              <div className="flex bg-muted/80 rounded-2xl p-1 border border-border/60">
-                <button onClick={() => { setListingType(listingType === 'sale' ? '' : 'sale'); handleFilterChange('listing_type', listingType === 'sale' ? '' : 'sale'); }} className={cn('flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all', listingType === 'sale' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')}>
-                  <Home className="w-4 h-4" />
-                  {t('filters.purchase') || 'Purchase'}
-                </button>
-                <button onClick={() => { setListingType(listingType === 'rent' ? '' : 'rent'); handleFilterChange('listing_type', listingType === 'rent' ? '' : 'rent'); }} className={cn('flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all', listingType === 'rent' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')}>
-                  <Hotel className="w-4 h-4" />
-                  {t('filters.rent') || 'Rent'}
-                </button>
+
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-3">{t('filters.priceRange') || 'Price Range'}</label>
+               <div className="flex items-center gap-4">
+                 <input type="range" min="0" max="5000000" step="100000" value={priceRange[0]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([Math.min(val, priceRange[1] - 100000), priceRange[1]]); handleFilterChange('price_min', Math.min(val, priceRange[1] - 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
+                 <input type="range" min="0" max="5000000" step="100000" value={priceRange[1]} onChange={(e) => { const val = parseInt(e.target.value); setPriceRange([priceRange[0], Math.max(val, priceRange[0] + 100000)]); handleFilterChange('price_max', Math.max(val, priceRange[0] + 100000)); }} className="flex-1 h-2 bg-accent/20 rounded-full appearance-none accent-accent cursor-pointer" />
+                 <div className="w-32 text-right text-sm font-medium gradient-gold">{priceRange[1] >= 5000000 ? 'AED 5M+' : `${(priceRange[1] / 1000000).toFixed(1)}M`}</div>
                </div>
+               <div className="flex justify-between text-xs text-muted-foreground mt-2"><span>AED 0</span><span>AED 5M+</span></div>
              </div>
              <div>
-               <label className="block text-sm font-medium mb-3">{t('filters.propertySize') || 'Property Size'}</label>
-               <Select
-                 value={areaRange[0] === 0 && areaRange[1] === 10000 ? '' : `${areaRange[0]}-${areaRange[1]}`}
-                 onValueChange={(v) => {
-                   const selected = areaRanges.find((r) => `${r.min}-${r.max}` === v);
-                   if (selected) {
-                     const next: [number, number] = [
-                       selected.min ?? 0,
-                       selected.max ?? 10000,
-                     ];
-                     setAreaRange(next);
-                     handleFilterChange('min_area', selected.min ?? undefined);
-                     handleFilterChange('max_area', selected.max ?? undefined);
-                   } else {
-                     setAreaRange([0, 10000]);
-                     handleFilterChange('min_area', undefined);
-                     handleFilterChange('max_area', undefined);
-                   }
-                 }}
-               >
-                 <SelectTrigger className="rounded-xl border-border/70">
-                   <SelectValue placeholder={t('filters.anySize') || 'Any Size'} />
-                 </SelectTrigger>
-                 <SelectContent className="z-[60]">
-                   <SelectItem value="">{t('filters.anySize') || 'Any Size'}</SelectItem>
-                   {areaRanges.filter((r) => r.min !== undefined || r.max !== undefined).map((r) => (
-                     <SelectItem key={`${r.min}-${r.max}`} value={`${r.min}-${r.max}`}>
-                       {r.label}
-                     </SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-             </div>
-           </div>
+               <label className="block text-sm font-medium mb-3">{t('filters.listingType') || 'Listing Type'}</label>
+               <div className="flex bg-muted/80 rounded-2xl p-1 border border-border/60">
+                 <button onClick={() => { setListingType(listingType === 'sale' ? '' : 'sale'); handleFilterChange('listing_type', listingType === 'sale' ? '' : 'sale'); }} className={cn('flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all', listingType === 'sale' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')}>
+                   <Home className="w-4 h-4" />
+                   {t('filters.purchase') || 'Purchase'}
+                 </button>
+                 <button onClick={() => { setListingType(listingType === 'rent' ? '' : 'rent'); handleFilterChange('listing_type', listingType === 'rent' ? '' : 'rent'); }} className={cn('flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all', listingType === 'rent' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground')}>
+                   <Hotel className="w-4 h-4" />
+                   {t('filters.rent') || 'Rent'}
+                 </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-3">{t('filters.propertySize') || 'Property Size'}</label>
+                <Select
+                  value={areaRange[0] === 0 && areaRange[1] === 10000 ? '' : `${areaRange[0]}-${areaRange[1]}`}
+                  onValueChange={(v) => {
+                    const selected = areaRanges.find((r) => `${r.min}-${r.max}` === v);
+                    if (selected) {
+                      const next: [number, number] = [
+                        selected.min ?? 0,
+                        selected.max ?? 10000,
+                      ];
+                      setAreaRange(next);
+                      handleFilterChange('min_area', selected.min ?? undefined);
+                      handleFilterChange('max_area', selected.max ?? undefined);
+                    } else {
+                      setAreaRange([0, 10000]);
+                      handleFilterChange('min_area', undefined);
+                      handleFilterChange('max_area', undefined);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="rounded-xl border-border/70">
+                    <SelectValue placeholder={t('filters.anySize') || 'Any Size'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{t('filters.anySize') || 'Any Size'}</SelectItem>
+                    {areaRanges.filter((r) => r.min !== undefined || r.max !== undefined).map((r) => (
+                      <SelectItem key={`${r.min}-${r.max}`} value={`${r.min}-${r.max}`}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-destructive hover:text-destructive/80 rounded-xl"><CloseIcon className="w-4 h-4 mr-2" />{t('filters.reset')}</Button>
-          )}
-        </div>
-      </motion.div>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-destructive hover:text-destructive/80 rounded-xl"><CloseIcon className="w-4 h-4 mr-2" />{t('filters.reset')}</Button>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       <motion.div layout className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4')}>
         {filteredProperties.map((property, index) => (

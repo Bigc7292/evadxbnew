@@ -14,8 +14,6 @@ export default async function SecondaryPropertiesPage({ params }: PageProps) {
   const { locale } = await params;
 
   return (
-    <>
-      <SecondaryPropertiesClient locale={locale} />
-    </>
+    <SecondaryPropertiesClient locale={locale} />
   );
 }

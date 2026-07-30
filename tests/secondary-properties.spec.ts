@@ -5,7 +5,7 @@ test.describe('Secondary Properties Page', () => {
     await page.goto('/en/properties/secondary');
     await page.waitForLoadState('networkidle');
 
-    const heading = page.locator('h2').filter({ hasText: 'Secondary Market Properties' });
+    const heading = page.locator('h1').filter({ hasText: 'Secondary Market Properties' });
     await expect(heading).toBeVisible();
 
     await page.locator('article').filter({ has: page.locator('h3') }).first().waitFor({ state: 'visible' });
