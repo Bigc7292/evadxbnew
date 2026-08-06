@@ -47,7 +47,7 @@ export function SecondaryPropertiesClient({ locale }: SecondaryPropertiesClientP
     queryKey: ['secondary-properties', filters],
     queryFn: async () => {
       const result = await getProperties({
-        status: 'ready',
+        status: 'active',
         listing_type: 'sale',
         limit: 100,
         ...filters,
