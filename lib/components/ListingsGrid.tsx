@@ -94,16 +94,17 @@ export function ListingsGrid({
       return properties;
     }
     return properties.filter((property) => {
-      if (searchQuery && !property.title.toLowerCase().includes(searchQuery.toLowerCase()) && !property.location.toLowerCase().includes(searchQuery.toLowerCase())) {
+      const locationText = (property.location ?? property.area_name ?? '').toLowerCase();
+      if (searchQuery && !property.title.toLowerCase().includes(searchQuery.toLowerCase()) && !locationText.includes(searchQuery.toLowerCase())) {
         return false;
       }
       if (selectedType && property.property_type !== selectedType) {
         return false;
       }
-      if (selectedLocation && property.location !== selectedLocation) {
+      if (selectedLocation && (property.location ?? property.area_name) !== selectedLocation) {
         return false;
       }
-      if (listingType && property.price_type !== listingType) {
+      if (listingType && property.listing_type !== listingType) {
         return false;
       }
       if (bedrooms && property.bedrooms !== parseInt(bedrooms)) {

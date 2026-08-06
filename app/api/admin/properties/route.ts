@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('property_type', property_type);
     }
     if (search) {
-      query = query.or(`title.ilike.%${search}%,slug.ilike.%${search}%,area_name.ilike.%${search}%,developer.ilike.%${search}%`);
+      query = query.or(`title.ilike.%${search}%,slug.ilike.%${search}%,area_name.ilike.%${search}%,project_name.ilike.%${search}%`);
     }
     if (featured === 'true') {
       query = query.eq('is_featured', true);

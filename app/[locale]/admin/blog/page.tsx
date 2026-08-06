@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Plus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Star, Trash2, Edit, Eye, UserPlus, UserCheck, UserX, Mail as MailIcon, Phone as PhoneIcon, MapPin as MapPinIcon, Star as StarIcon, X, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Star, Trash2, Edit, Eye, UserPlus, UserCheck, UserX, X, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/lib/components/ui/button';
 import { Input } from '@/lib/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/lib/components/ui/select';
@@ -12,56 +12,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/lib/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/lib/components/ui/avatar';
 import { cn, formatPrice } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const mockPosts = [
-  {
-    id: '1',
-    slug: 'abu-dhabi-attractive-real-estate-for-investment',
-    title: 'Abu Dhabi: Attractive Real Estate for Investment',
-    excerpt: 'Stable Economy and Growth: Abu Dhabi is renowned for its diverse and dynamically evolving economic sectors...',
-    category: 'Market Insights',
-    author: 'Elvira Sharshenalieva',
-    tags: ['Abu Dhabi', 'Investment', 'Market Analysis'],
-    is_published: true,
-    is_featured: true,
-    published_at: '2023-09-01T00:00:00Z',
-    featured_image: '/abu-dhabi-city-guide-feature.jpg',
-  },
-  {
-    id: '2',
-    slug: 'why-investors-choose-dubai-attractiveness-and-advantages',
-    title: 'Why Investors Choose Dubai: Attractiveness and Advantages',
-    excerpt: 'One such attractive hub of global investments is Dubai, a metropolis that has transformed into a true haven for business and investment over the past decades.',
-    category: 'Market Insights',
-    author: 'EVA Research Team',
-    tags: ['Dubai', 'Investment', 'Advantages'],
-    is_published: true,
-    is_featured: false,
-    published_at: '2023-08-30T00:00:00Z',
-    featured_image: '/shutterstock_355722602.jpg',
-  },
-  {
-    id: '3',
-    slug: 'sobha-hartland-ii-a-new-neighborhood-by-sobha-realty-in-dubai',
-    title: 'Sobha Hartland II – a new neighborhood by Sobha Realty in Dubai',
-    excerpt: 'Among the many emerging neighborhoods, one of the most attractive is Sobha Hartland II – a new residential complex created by the magnificent developer, Sobha Realty.',
-    category: 'New Projects',
-    author: 'Maria Cristina Campagna',
-    tags: ['Sobha', 'New Projects', 'Dubai'],
-    is_published: true,
-    is_featured: false,
-    published_at: '2023-07-31T00:00:00Z',
-    featured_image: '/320-riverside-crescente-opp-doc.jpg',
-  },
-];
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  category: string;
+  author_name: string | null;
+  is_published: boolean;
+  is_featured: boolean;
+  published_at: string | null;
+  created_at: string;
+}
 
 export default function AdminBlogPage() {
   const t = useTranslations();
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [total, setTotal] = useState(0);
 
   const statusOptions = [
     { value: 'all', label: t('admin.allStatus') },
@@ -77,6 +51,32 @@ export default function AdminBlogPage() {
     { value: 'Legal & Finance', label: 'Legal & Finance' },
     { value: 'Lifestyle', label: 'Lifestyle' },
   ];
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.set('page', '1');
+        params.set('limit', '50');
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+        if (categoryFilter !== 'all') params.set('category', categoryFilter);
+        if (searchQuery) params.set('search', searchQuery);
+
+        const res = await fetch(`/api/admin/blog?${params.toString()}`);
+        const json = await res.json();
+        if (json.data) {
+          setPosts(json.data);
+          setTotal(json.pagination?.total || 0);
+        }
+      } catch (error) {
+        console.error('Failed to load blog posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, [statusFilter, categoryFilter, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -169,81 +169,88 @@ export default function AdminBlogPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockPosts.map((post, index) => (
-                <motion.tr
-                  key={post.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="hover:bg-muted/50 transition-colors border-b border-border/50"
-                >
-                  <TableCell className="w-20 text-center">
-                    <div className="w-16 h-12 rounded-lg overflow-hidden bg-muted mx-auto">
-                      <img 
-                        src={post.featured_image} 
-                        alt={post.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    {t('admin.loading')}
                   </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium max-w-xs truncate">{post.title}</p>
-                      <p className="text-sm text-muted-foreground max-w-xs truncate">{post.excerpt}</p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {post.tags.map((tag, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">{tag}</Badge>
-                        ))}
-                        {post.is_featured && <Badge variant="luxury" className="text-xs ml-2">✨ Featured</Badge>}
+                </TableRow>
+              ) : posts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                    {t('admin.noData')}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                posts.map((post, index) => (
+                  <motion.tr
+                    key={post.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-muted/50 transition-colors border-b border-border/50"
+                  >
+                    <TableCell className="w-20 text-center">
+                      <div className="w-16 h-12 rounded-lg overflow-hidden bg-muted mx-auto">
+                        <span className="text-xs font-medium gradient-gold">??</span>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline" className="text-xs">{post.category}</Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <span className="text-sm text-muted-foreground">{post.author}</span>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(post.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-                  </TableCell>
-                  <TableCell className="w-32 text-center">
-                    <Badge variant={post.is_published ? 'success' : 'outline'}>
-                      {post.is_published ? t('admin.published') : t('admin.draft')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="w-48 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem>
-                          <Edit className="w-4 h-4 mr-2" />
-                          {t('admin.edit')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Eye className="w-4 h-4 mr-2" />
-                          {t('admin.view')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          {t('admin.viewOnSite')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          {t('admin.delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </motion.tr>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium max-w-xs truncate">{post.title}</p>
+                        <p className="text-sm text-muted-foreground max-w-xs truncate">{post.excerpt}</p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {post.is_featured && <Badge variant="luxury" className="text-xs ml-2">? Featured</Badge>}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge variant="outline" className="text-xs">{post.category}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="text-sm text-muted-foreground">{post.author_name || '-'}</span>
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      <span className="text-sm text-muted-foreground">
+                        {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="w-32 text-center">
+                      <Badge variant={post.is_published ? 'success' : 'outline'}>
+                        {post.is_published ? t('admin.published') : t('admin.draft')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="w-48 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem>
+                            <Edit className="w-4 h-4 mr-2" />
+                            {t('admin.edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Eye className="w-4 h-4 mr-2" />
+                            {t('admin.view')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            {t('admin.viewOnSite')}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {t('admin.delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </motion.tr>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -256,13 +263,11 @@ export default function AdminBlogPage() {
         className="flex items-center justify-between"
       >
         <p className="text-sm text-muted-foreground">
-          Showing 1 to 3 of 23 results
+          {loading ? '...' : `Showing 1 to ${posts.length} of ${total} results`}
         </p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" disabled>Previous</Button>
-          <Button variant="outline" size="sm">1</Button>
-          <Button variant="luxury" size="sm">2</Button>
-          <Button variant="outline" size="sm">3</Button>
+          <Button variant="luxury" size="sm">1</Button>
           <Button variant="outline" size="sm">Next</Button>
         </div>
       </motion.div>

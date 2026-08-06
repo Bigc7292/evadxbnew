@@ -9,41 +9,58 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export type Property = {
   id: string;
-  title: string;
   slug: string;
+  title: string;
   description: string;
   short_description: string;
-  price: number | null;
-  currency: string;
-  price_type: 'sale' | 'rent';
-  property_type: 'apartment' | 'villa' | 'townhouse' | 'penthouse' | 'land' | 'commercial';
+  price_min: number | null;
+  price_max: number | null;
+  price_currency: string;
+  property_type: 'apartment' | 'villa' | 'townhouse' | 'penthouse' | 'studio' | 'commercial' | 'land';
+  status: 'off_plan' | 'ready' | 'under_construction' | 'active' | 'pending' | 'sold' | 'rented' | 'off_market' | 'draft';
+  listing_type: 'sale' | 'rent' | 'both';
   bedrooms: number | null;
   bathrooms: number | null;
   area_sqft: number | null;
-  location: string;
-  area: string;
-  developer: string;
-  completion_date: string | null;
-  status: 'off_plan' | 'ready' | 'under_construction';
-  images: string[];
-  featured_image: string | null;
-  gallery_images: string[];
-  video_url: string | null;
-  virtual_tour_url: string | null;
-  floor_plans: string[];
-  amenities: string[];
-  features: string[];
-  nearby_places: string[];
-  coordinates: { lat: number; lng: number } | null;
+  address: string | null;
+  area_name: string | null;
+  community: string | null;
+  city: string | null;
+  country: string | null;
   latitude: number | null;
   longitude: number | null;
-  google_maps_embed: string | null;
+  google_maps_embed_url: string | null;
+  developer_id: string | null;
+  project_id: string | null;
+  project_name: string | null;
+  features: string[];
+  amenities: string[];
+  nearby_places: string[];
+  hero_image_url: string | null;
+  gallery_images: string[];
+  floor_plan_images: string[];
+  video_url: string | null;
+  virtual_tour_url: string | null;
   payment_plan: PaymentPlan | null;
   is_featured: boolean;
   is_promoted: boolean;
   views_count: number;
+  agent_id: string | null;
+  completion_date: string | null;
   created_at: string;
   updated_at: string;
+  // Backward-compatible aliases for UI components
+  price?: number | null;
+  currency?: string;
+  price_type?: 'sale' | 'rent';
+  area?: string | null;
+  developer?: string;
+  featured_image?: string | null;
+  images?: string[];
+  floor_plans?: string[];
+  google_maps_embed?: string | null;
+  coordinates?: { lat: number; lng: number } | null;
+  location?: string | null;
 };
 
 export type Agent = {
@@ -130,29 +147,55 @@ export type BlogPost = {
   slug: string;
   excerpt: string;
   content: string;
+  content_html: string | null;
   featured_image: string;
-  author_id: string;
+  hero_image_alt: string | null;
+  gallery_images: string[];
+  author_id: string | null;
+  author_name: string | null;
+  author_role: string | null;
   category: string;
   tags: string[];
   published_at: string | null;
   is_published: boolean;
+  is_featured: boolean;
+  scheduled_at: string | null;
   seo_title: string | null;
   seo_description: string | null;
+  og_image_url: string | null;
+  reading_time: number | null;
+  views_count: number;
   created_at: string;
   updated_at: string;
 };
 
 export type Lead = {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  phone: string;
+  phone: string | null;
+  whatsapp: string | null;
   message: string;
-  property_id: string | null;
   source: string;
-  language: string;
-  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-  assigned_agent_id: string | null;
+  source_page: string | null;
+  property_id: string | null;
+  project_id: string | null;
+  agent_id: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  google_id: string | null;
+  yandex_id: string | null;
+  fb_pixel_id: string | null;
+  status: 'new' | 'contacted' | 'qualified' | 'viewing' | 'offer' | 'closed_won' | 'closed_lost' | 'spam';
+  priority: number;
+  assigned_to: string | null;
+  notes: string | null;
+  last_contacted_at: string | null;
+  next_follow_up_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -192,6 +235,244 @@ export type SiteConfig = {
   };
 };
 
+export type Developer = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  description: string | null;
+  website_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Project = {
+  id: string;
+  name: string;
+  slug: string;
+  developer_id: string | null;
+  description: string | null;
+  location: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  status: 'active' | 'completed' | 'cancelled' | 'on_hold';
+  start_date: string | null;
+  completion_date: string | null;
+  payment_plan: PaymentPlan | null;
+  features: string[];
+  amenities: string[];
+  hero_image_url: string | null;
+  gallery_images: string[];
+  video_url: string | null;
+  virtual_tour_url: string | null;
+  is_featured: boolean;
+  is_promoted: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type District = {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+  district_type: 'city' | 'district' | 'community' | 'neighborhood';
+  latitude: number | null;
+  longitude: number | null;
+  description: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatSession = {
+  id: string;
+  session_token: string;
+  user_id: string | null;
+  language: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  started_at: string;
+  ended_at: string | null;
+  message_count: number;
+  is_resolved: boolean;
+  lead_id: string | null;
+  metadata: Record<string, any>;
+};
+
+export type ChatMessage = {
+  id: string;
+  session_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  language: string | null;
+  sentiment: string | null;
+  intent: string | null;
+  entities: any[];
+  tool_calls: any[];
+  created_at: string;
+};
+
+export type Wishlist = {
+  id: string;
+  user_id: string;
+  property_id: string;
+  created_at: string;
+};
+
+export type Partner = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  website_url: string | null;
+  description: string | null;
+  category: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Reward = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  image_url: string | null;
+  points_required: number | null;
+  is_active: boolean;
+  valid_from: string | null;
+  valid_until: string | null;
+  terms_conditions: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ContentBlock = {
+  id: string;
+  page: string;
+  section: string;
+  locale: string;
+  content: Record<string, any>;
+  sort_order: number;
+  is_published: boolean;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Review = {
+  id: string;
+  property_id: string | null;
+  agent_id: string | null;
+  user_name: string;
+  user_email: string | null;
+  rating: number;
+  title: string | null;
+  content: string;
+  is_verified: boolean;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MediaAsset = {
+  id: string;
+  bucket: string;
+  path: string;
+  url: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  width: number | null;
+  height: number | null;
+  alt_text: string | null;
+  caption: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+};
+
+export type PropertyView = {
+  id: string;
+  property_id: string;
+  viewer_ip: string | null;
+  session_id: string | null;
+  user_id: string | null;
+  referrer: string | null;
+  page_url: string | null;
+  device_type: string | null;
+  country_code: string | null;
+  created_at: string;
+};
+
+export type SyncLog = {
+  id: string;
+  source: 'scraper' | 'goyzer' | 'woocommerce' | 'manual';
+  status: 'started' | 'completed' | 'failed' | 'partial';
+  records_processed: number;
+  records_created: number;
+  records_updated: number;
+  records_failed: number;
+  error_message: string | null;
+  started_at: string;
+  finished_at: string | null;
+};
+
+export type Notification = {
+  id: string;
+  user_id: string | null;
+  type: string;
+  title: string;
+  message: string | null;
+  data: Record<string, any>;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type Comparison = {
+  id: string;
+  session_id: string;
+  property_ids: string[];
+  created_at: string;
+};
+
+export type Event = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  event_type: 'open_house' | 'webinar' | 'virtual_tour' | 'exhibition';
+  property_id: string | null;
+  start_at: string;
+  end_at: string;
+  location: string | null;
+  meeting_url: string | null;
+  max_attendees: number | null;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Testimonial = {
+  id: string;
+  user_name: string;
+  user_title: string | null;
+  user_image_url: string | null;
+  content: string;
+  rating: number;
+  property_id: string | null;
+  agent_id: string | null;
+  is_published: boolean;
+  is_featured: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 function normalizeProperty(p: any): Property {
   if (!p) return p;
   const lat = p.latitude ?? null;
@@ -199,8 +480,8 @@ function normalizeProperty(p: any): Property {
   const country = (p.country || '').toLowerCase();
   const city = (p.city || '').toLowerCase();
   const isUAE = country === 'uae' || city === 'dubai' || city === 'abu dhabi';
-  const currency = isUAE ? 'AED' : (p.currency ?? p.price_currency ?? 'USD');
-  const rawPrice = p.price ?? p.price_min ?? null;
+  const currency = isUAE ? 'AED' : (p.price_currency ?? p.currency ?? 'USD');
+  const rawPrice = p.price_min ?? p.price_max ?? null;
   const normalizedPrice = normalizePropertyPrice(rawPrice, currency);
 
   const normalizeArray = (items: any[]): string[] => {
@@ -208,26 +489,37 @@ function normalizeProperty(p: any): Property {
     return items.map(normalizeImageUrl).filter((url): url is string => url !== null);
   };
 
+  const location = p.location ?? ([p.address, p.community, p.city, p.country].filter(Boolean).join(', ') || '');
+  const area_name = p.area_name ?? null;
+  const area = p.area_name ?? p.community ?? p.city ?? '';
+
   return {
     ...p,
-    id: p.id ?? '',
+    price_min: p.price_min ?? null,
+    price_max: p.price_max ?? null,
+    price_currency: currency,
+    developer: p.developer ?? p.project_name ?? '',
+    developer_id: p.developer_id ?? null,
+    project_id: p.project_id ?? null,
+    project_name: p.project_name ?? null,
+    hero_image_url: normalizeImageUrl(p.hero_image_url ?? null),
+    featured_image: normalizeImageUrl(p.hero_image_url ?? null),
+    gallery_images: normalizeArray(p.gallery_images),
+    images: normalizeArray(p.gallery_images),
+    floor_plan_images: normalizeArray(p.floor_plan_images),
+    floor_plans: normalizeArray(p.floor_plan_images),
+    google_maps_embed_url: p.google_maps_embed_url ?? null,
+    google_maps_embed: p.google_maps_embed_url ?? null,
+    coordinates: lat != null && lng != null ? { lat, lng } : null,
+    location,
+    area_name,
+    area,
+    views_count: p.views_count ?? 0,
+    agent_id: p.agent_id ?? null,
+    completion_date: p.completion_date ?? null,
     price: normalizedPrice,
     currency,
-    price_type: p.price_type ?? p.listing_type ?? 'sale',
-    area: p.area ?? p.area_name ?? '',
-    developer: p.developer ?? p.project_name ?? '',
-    featured_image: normalizeImageUrl(p.featured_image ?? p.hero_image_url ?? null),
-    completion_date: p.completion_date ?? (p.year_completion ? String(p.year_completion) : null),
-    gallery_images: normalizeArray(p.gallery_images),
-    floor_plans: p.floor_plans ?? [],
-    features: p.features ?? [],
-    amenities: p.amenities ?? [],
-    nearby_places: p.nearby_places ?? [],
-    payment_plan: p.payment_plan ?? null,
-    images: normalizeArray(p.images ?? p.gallery_images),
-    google_maps_embed: p.google_maps_embed ?? p.google_maps_embed_url ?? null,
-    coordinates: lat != null && lng != null ? { lat, lng } : null,
-    location: p.location ?? ([p.address, p.community, p.city, p.country].filter(Boolean).join(', ') || ''),
+    price_type: p.listing_type ?? 'sale',
   };
 }
 
@@ -278,9 +570,9 @@ export async function getProperties(filters?: {
     .select('*', { count: 'exact' });
 
   if (filters?.sort_by === 'price_asc') {
-    query = query.order('price', { ascending: true });
+    query = query.order('price_min', { ascending: true });
   } else if (filters?.sort_by === 'price_desc') {
-    query = query.order('price', { ascending: false });
+    query = query.order('price_max', { ascending: false });
   } else if (filters?.sort_by === 'area') {
     query = query.order('area_sqft', { ascending: false });
   } else {
@@ -294,13 +586,13 @@ export async function getProperties(filters?: {
     query = query.eq('listing_type', filters.listing_type);
   }
   if (filters?.location) {
-    query = query.ilike('location', `%${filters.location}%`);
+    query = query.or(`area_name.ilike.%${filters.location}%,community.ilike.%${filters.location}%,city.ilike.%${filters.location}%`);
   }
   if (filters?.min_price) {
-    query = query.gte('price', filters.min_price);
+    query = query.gte('price_min', filters.min_price);
   }
   if (filters?.max_price) {
-    query = query.lte('price', filters.max_price);
+    query = query.lte('price_max', filters.max_price);
   }
   if (filters?.min_area) {
     query = query.gte('area_sqft', filters.min_area);
@@ -319,7 +611,7 @@ export async function getProperties(filters?: {
   }
   if (filters?.search) {
     const term = `%${filters.search}%`;
-    query = query.or(`title.ilike.${term},location.ilike.${term},developer.ilike.${term},area.ilike.${term}`);
+    query = query.or(`title.ilike.${term},area_name.ilike.${term},project_name.ilike.${term},city.ilike.${term}`);
   }
   if (filters?.furnishing) {
     query = query.contains('features', [filters.furnishing]);
@@ -475,4 +767,256 @@ export async function createLead(lead: Omit<Lead, 'id' | 'created_at' | 'updated
 
   if (error) throw error;
   return data as Lead;
+}
+
+export async function getDevelopers(filters?: { limit?: number; active_only?: boolean }) {
+  const cacheKey = createCacheKey(['developers', filters]);
+  const cached = getCached<Developer[]>(cacheKey);
+  if (cached) return cached;
+
+  let query = supabase
+    .from('developers')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (filters?.active_only) {
+    query = query.eq('is_active', true);
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const result = (data ?? []) as Developer[];
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
+}
+
+export async function getProjects(filters?: { developer_id?: string; status?: string; limit?: number }) {
+  const cacheKey = createCacheKey(['projects', filters]);
+  const cached = getCached<Project[]>(cacheKey);
+  if (cached) return cached;
+
+  let query = supabase
+    .from('projects')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (filters?.developer_id) {
+    query = query.eq('developer_id', filters.developer_id);
+  }
+  if (filters?.status) {
+    query = query.eq('status', filters.status);
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const result = (data ?? []) as Project[];
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
+}
+
+export async function getPartners(filters?: { category?: string; active_only?: boolean; limit?: number }) {
+  const cacheKey = createCacheKey(['partners', filters]);
+  const cached = getCached<Partner[]>(cacheKey);
+  if (cached) return cached;
+
+  let query = supabase
+    .from('partners')
+    .select('*')
+    .order('sort_order', { ascending: true });
+
+  if (filters?.category) {
+    query = query.eq('category', filters.category);
+  }
+  if (filters?.active_only) {
+    query = query.eq('is_active', true);
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const result = (data ?? []) as Partner[];
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
+}
+
+export async function getRewards(filters?: { active_only?: boolean; limit?: number }) {
+  const cacheKey = createCacheKey(['rewards', filters]);
+  const cached = getCached<Reward[]>(cacheKey);
+  if (cached) return cached;
+
+  let query = supabase
+    .from('rewards')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (filters?.active_only) {
+    query = query.eq('is_active', true);
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const result = (data ?? []) as Reward[];
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
+}
+
+export async function getContentBlocks(page: string, section: string, locale = 'en') {
+  const cacheKey = createCacheKey(['content_blocks', page, section, locale]);
+  const cached = getCached<ContentBlock | null>(cacheKey);
+  if (cached) return cached;
+
+  const { data, error } = await supabase
+    .from('content_blocks')
+    .select('*')
+    .eq('page', page)
+    .eq('section', section)
+    .eq('locale', locale)
+    .maybeSingle();
+
+  if (error) throw error;
+  const result = (data ?? null) as ContentBlock | null;
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
+}
+
+export async function getReviews(filters?: { property_id?: string; agent_id?: string; published_only?: boolean; limit?: number }) {
+  const cacheKey = createCacheKey(['reviews', filters]);
+  const cached = getCached<Review[]>(cacheKey);
+  if (cached) return cached;
+
+  let query = supabase
+    .from('reviews')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (filters?.property_id) {
+    query = query.eq('property_id', filters.property_id);
+  }
+  if (filters?.agent_id) {
+    query = query.eq('agent_id', filters.agent_id);
+  }
+  if (filters?.published_only) {
+    query = query.eq('is_published', true);
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const result = (data ?? []) as Review[];
+  setCached(cacheKey, result, 60 * 1000);
+  return result;
+}
+
+export async function getWishlist(userId: string) {
+  const cacheKey = createCacheKey(['wishlist', userId]);
+  const cached = getCached<Wishlist[]>(cacheKey);
+  if (cached) return cached;
+
+  const { data, error } = await supabase
+    .from('wishlists')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (error) throw error;
+  const result = (data ?? []) as Wishlist[];
+  setCached(cacheKey, result, 30 * 1000);
+  return result;
+}
+
+export async function toggleWishlist(userId: string, propertyId: string) {
+  const existing = await supabase
+    .from('wishlists')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('property_id', propertyId)
+    .maybeSingle();
+
+  if (existing.data) {
+    const { error } = await supabase
+      .from('wishlists')
+      .delete()
+      .eq('id', existing.data.id);
+    if (error) throw error;
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('wishlists')
+    .insert({ user_id: userId, property_id: propertyId });
+
+  if (error) throw error;
+  return true;
+}
+
+export async function incrementPropertyViews(propertyId: string) {
+  const { error } = await supabase.rpc('increment_property_views', { p_property_id: propertyId });
+  if (error) throw error;
+}
+
+export async function createSyncLog(log: Omit<SyncLog, 'id' | 'started_at'>) {
+  const { data, error } = await supabase
+    .from('sync_logs')
+    .insert({ ...log, started_at: new Date().toISOString() })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as SyncLog;
+}
+
+export async function getChatSessions(filters?: { user_id?: string; lead_id?: string; limit?: number }) {
+  const cacheKey = createCacheKey(['chat_sessions', filters]);
+  const cached = getCached<ChatSession[]>(cacheKey);
+  if (cached) return cached;
+
+  let query = supabase
+    .from('chat_sessions')
+    .select('*')
+    .order('started_at', { ascending: false });
+
+  if (filters?.user_id) {
+    query = query.eq('user_id', filters.user_id);
+  }
+  if (filters?.lead_id) {
+    query = query.eq('lead_id', filters.lead_id);
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  const result = (data ?? []) as ChatSession[];
+  setCached(cacheKey, result, 30 * 1000);
+  return result;
+}
+
+export async function getChatMessages(sessionId: string) {
+  const cacheKey = createCacheKey(['chat_messages', sessionId]);
+  const cached = getCached<ChatMessage[]>(cacheKey);
+  if (cached) return cached;
+
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  const result = (data ?? []) as ChatMessage[];
+  setCached(cacheKey, result, 30 * 1000);
+  return result;
 }

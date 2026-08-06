@@ -172,6 +172,14 @@ function parsePriceValue(text: string): number | null {
   return num;
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function parsePropertyDetail(markdown: string, url: string): any {
   try {
     const titleMatch = markdown.match(/^#\s+(.+?)(?:\n|$)/m);
@@ -340,7 +348,7 @@ function parsePropertyDetail(markdown: string, url: string): any {
       bedrooms: null,
       bathrooms: null,
       area_sqft: null,
-      developer: developer,
+      developer_name: developer,
       project_name: title,
       area_name: 'Dubai',
       community: 'Dubai',
@@ -372,7 +380,7 @@ function parsePropertyDetail(markdown: string, url: string): any {
 async function scrapeListingPages(): Promise<string[]> {
   const allUrls: string[] = [];
   
-  console.log('📄 Scraping listing pages...');
+  console.log('?? Scraping listing pages...');
   for (let page = 1; page <= TOTAL_PAGES; page++) {
     const pageUrl = page === 1 ? BASE_LISTING_URL : `${BASE_LISTING_URL}/page/${page}/`;
     console.log(`  Page ${page}/${TOTAL_PAGES}`);
@@ -394,7 +402,7 @@ async function scrapePropertyDetails(urls: string[], progress: Progress): Promis
   const existingData = loadScrapedData();
   const dataMap = new Map(existingData.map(p => [p.slug, p]));
   
-  console.log(`\n🏠 Scraping ${urls.length} property details...`);
+  console.log(`\n?? Scraping ${urls.length} property details...`);
   
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
@@ -427,8 +435,46 @@ async function scrapePropertyDetails(urls: string[], progress: Progress): Promis
   return properties;
 }
 
+async function resolveDeveloperId(name: string): Promise<string | null> {
+  if (!name) return null;
+  const { data: existing } = await supabase
+    .from('developers')
+    .select('id')
+    .eq('name', name)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data: created } = await supabase
+    .from('developers')
+    .insert({ name, slug: slugify(name), is_active: true })
+    .select('id')
+    .single();
+
+  return created?.id ?? null;
+}
+
+async function resolveProjectId(name: string, developerId: string | null): Promise<string | null> {
+  if (!name) return null;
+  const { data: existing } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('name', name)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data: created } = await supabase
+    .from('projects')
+    .insert({ name, slug: slugify(name), developer_id: developerId, is_active: true })
+    .select('id')
+    .single();
+
+  return created?.id ?? null;
+}
+
 async function importToSupabase(properties: any[], progress: Progress): Promise<void> {
-  console.log('\n📊 Importing to Supabase...');
+  console.log('\n?? Importing to Supabase...');
   let imported = 0;
   let failed = 0;
 
@@ -437,12 +483,54 @@ async function importToSupabase(properties: any[], progress: Progress): Promise<
       continue;
     }
 
+    const developerId = await resolveDeveloperId(property.developer_name || property.developer || 'EVA Real Estate');
+    const projectId = await resolveProjectId(property.project_name, developerId);
+
     const { error } = await supabase
       .from('properties')
-      .upsert(property, { onConflict: 'slug' });
+      .upsert({
+        slug: property.slug,
+        title: property.title,
+        description: property.description,
+        short_description: property.short_description,
+        property_type: property.property_type,
+        listing_type: property.listing_type,
+        status: property.status,
+        price_min: property.price_min,
+        price_max: property.price_max,
+        price_currency: property.price_currency || 'USD',
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        area_sqft: property.area_sqft,
+        address: property.address,
+        area_name: property.area_name,
+        community: property.community,
+        city: property.city || 'Dubai',
+        country: property.country || 'UAE',
+        latitude: property.latitude,
+        longitude: property.longitude,
+        features: property.features || [],
+        amenities: property.amenities || [],
+        nearby_places: property.nearby_places || [],
+        hero_image_url: property.hero_image_url || property.featured_image,
+        gallery_images: property.gallery_images || [],
+        floor_plan_images: property.floor_plans || [],
+        video_url: property.video_url,
+        virtual_tour_url: property.virtual_tour_url,
+        google_maps_embed_url: property.google_maps_embed_url,
+        developer_id: developerId,
+        project_id: projectId,
+        project_name: property.project_name,
+        payment_plan: property.payment_plan,
+        is_featured: property.is_featured,
+        is_promoted: property.is_promoted,
+        published_at: property.published_at,
+        external_source: property.external_source,
+        external_id: property.external_id,
+      }, { onConflict: 'slug' });
     
     if (error) {
-      console.error(`  ❌ Failed: ${property.slug}:`, error.message);
+      console.error(`  ? Failed: ${property.slug}:`, error.message);
       failed++;
     } else {
       imported++;
@@ -451,25 +539,25 @@ async function importToSupabase(properties: any[], progress: Progress): Promise<
   }
 
   saveProgress(progress);
-  console.log(`\n✅ Import complete: ${imported} imported, ${failed} failed`);
+  console.log(`\n? Import complete: ${imported} imported, ${failed} failed`);
 }
 
 async function main() {
-  console.log('🚀 Starting off-plan property import...\n');
+  console.log('?? Starting off-plan property import...\n');
   
   const progress = loadProgress();
-  console.log(`📋 Progress: ${progress.scrapedUrls.length} scraped, ${progress.importedSlugs.length} imported`);
+  console.log(`?? Progress: ${progress.scrapedUrls.length} scraped, ${progress.importedSlugs.length} imported`);
 
   const allPropertyUrls = await scrapeListingPages();
-  console.log(`\n✅ Found ${allPropertyUrls.length} unique property URLs`);
+  console.log(`\n? Found ${allPropertyUrls.length} unique property URLs`);
 
   const properties = await scrapePropertyDetails(allPropertyUrls, progress);
-  console.log(`\n✅ Scraped ${properties.length} new properties`);
+  console.log(`\n? Scraped ${properties.length} new properties`);
 
   const allScraped = loadScrapedData();
   await importToSupabase(allScraped, progress);
 
-  console.log('\n🎉 Done!');
+  console.log('\n?? Done!');
 }
 
 main().catch(console.error);

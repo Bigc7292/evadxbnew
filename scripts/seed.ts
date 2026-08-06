@@ -69,6 +69,44 @@ function extractArea(title: string): string {
   return 'Dubai';
 }
 
+async function resolveDeveloperId(name: string): Promise<string | null> {
+  if (!name) return null;
+  const { data: existing } = await supabase
+    .from('developers')
+    .select('id')
+    .eq('name', name)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data: created } = await supabase
+    .from('developers')
+    .insert({ name, slug: slugify(name), is_active: true })
+    .select('id')
+    .single();
+
+  return created?.id ?? null;
+}
+
+async function resolveProjectId(name: string, developerId: string | null): Promise<string | null> {
+  if (!name) return null;
+  const { data: existing } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('name', name)
+    .maybeSingle();
+
+  if (existing) return existing.id;
+
+  const { data: created } = await supabase
+    .from('projects')
+    .insert({ name, slug: slugify(name), developer_id: developerId, is_active: true })
+    .select('id')
+    .single();
+
+  return created?.id ?? null;
+}
+
 // Parse scraped HTML files
 async function parseScrapedData() {
   const scrapedDir = path.join(__dirname, '../../evadxb.com');
@@ -89,7 +127,7 @@ async function parseScrapedData() {
     if (!fs.existsSync(filePath)) continue;
     
     const html = fs.readFileSync(filePath, 'utf-8');
-    const property = parseLandingPage(html, file);
+    const property = await parseLandingPage(html, file);
     if (property) properties.push(property);
   }
 
@@ -99,7 +137,7 @@ async function parseScrapedData() {
   for (const file of listingFiles) {
     const filePath = path.join(scrapedDir, file);
     const html = fs.readFileSync(filePath, 'utf-8');
-    const property = parseListingPage(html, file);
+    const property = await parseListingPage(html, file);
     if (property) properties.push(property);
   }
 
@@ -163,6 +201,7 @@ function parseLandingPage(html: string, filename: string) {
     
     const slug = slugify(title);
     const price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, '')) * 1000000 : null;
+    const developerName = extractDeveloper(title);
     
     return {
       slug,
@@ -178,13 +217,13 @@ function parseLandingPage(html: string, filename: string) {
       bedrooms: null,
       bathrooms: null,
       area_sqft: null,
-      developer: extractDeveloper(title),
+      developer_name: developerName,
       project_name: title,
       area_name: extractArea(title),
       features: amenities,
       amenities: amenities,
       nearby_places: nearbyPlaces,
-      featured_image: ogImageMatch ? ogImageMatch[1] : null,
+      hero_image_url: ogImageMatch ? ogImageMatch[1] : null,
       gallery_images: galleryImages.slice(0, 10),
       video_url: null,
       virtual_tour_url: null,
@@ -240,7 +279,7 @@ function parseListingPage(html: string, filename: string) {
       area_sqft: extractNumber(details['Area'] || details['Size'] || ''),
       area_name: details['Location'] || '',
       community: details['Community'] || '',
-      featured_image: images[0] || null,
+      hero_image_url: images[0] || null,
       gallery_images: images.slice(1, 6),
       is_featured: false,
       is_promoted: false,
@@ -387,16 +426,16 @@ function parseSiteConfig(html: string) {
 
 // Main seeding function
 async function seedDatabase() {
-  console.log('🌱 Starting database seeding...');
+  console.log('?? Starting database seeding...');
   
   try {
     // Parse scraped data
-    console.log('📦 Parsing scraped website data...');
+    console.log('?? Parsing scraped website data...');
     const { properties, agents, blogPosts, siteConfig } = await parseScrapedData();
     console.log(`   Found: ${properties.length} properties, ${agents.length} agents, ${blogPosts.length} blog posts`);
     
     // Seed site config
-    console.log('🔧 Seeding site configuration...');
+    console.log('?? Seeding site configuration...');
     for (const [key, value] of Object.entries(siteConfig)) {
       const { error } = await supabase
         .from('site_config')
@@ -405,7 +444,7 @@ async function seedDatabase() {
     }
     
     // Seed agents
-    console.log('👥 Seeding agents...');
+    console.log('?? Seeding agents...');
     for (const agent of agents) {
       const { error } = await supabase
         .from('agents')
@@ -413,17 +452,58 @@ async function seedDatabase() {
       if (error) console.error(`Error seeding agent ${agent.slug}:`, error);
     }
     
-    // Seed properties
-    console.log('🏠 Seeding properties...');
+    // Seed properties with developer/project resolution
+    console.log('?? Seeding properties...');
     for (const property of properties) {
+      const developerId = await resolveDeveloperId(property.developer_name || property.developer || 'EVA Real Estate');
+      const projectId = await resolveProjectId(property.project_name, developerId);
+      
       const { error } = await supabase
         .from('properties')
-        .upsert(property, { onConflict: 'slug' });
+        .upsert({
+          slug: property.slug,
+          title: property.title,
+          description: property.description,
+          short_description: property.short_description,
+          property_type: property.property_type,
+          listing_type: property.listing_type,
+          status: property.status,
+          price_min: property.price_min,
+          price_max: property.price_max,
+          price_currency: property.price_currency || 'AED',
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          area_sqft: property.area_sqft,
+          address: property.address,
+          area_name: property.area_name,
+          community: property.community,
+          city: property.city || 'Dubai',
+          country: property.country || 'UAE',
+          latitude: property.latitude,
+          longitude: property.longitude,
+          features: property.features || [],
+          amenities: property.amenities || [],
+          nearby_places: property.nearby_places || [],
+          hero_image_url: property.hero_image_url || property.featured_image,
+          gallery_images: property.gallery_images || [],
+          floor_plan_images: property.floor_plans || [],
+          video_url: property.video_url,
+          virtual_tour_url: property.virtual_tour_url,
+          google_maps_embed_url: property.google_maps_embed_url,
+          developer_id: developerId,
+          project_id: projectId,
+          project_name: property.project_name,
+          payment_plan: property.payment_plan,
+          is_featured: property.is_featured,
+          is_promoted: property.is_promoted,
+          published_at: property.published_at,
+        }, { onConflict: 'slug' });
+      
       if (error) console.error(`Error seeding property ${property.slug}:`, error);
     }
     
     // Seed blog posts
-    console.log('📝 Seeding blog posts...');
+    console.log('?? Seeding blog posts...');
     for (const post of blogPosts) {
       const { error } = await supabase
         .from('blog_posts')
@@ -431,10 +511,10 @@ async function seedDatabase() {
       if (error) console.error(`Error seeding blog post ${post.slug}:`, error);
     }
     
-    console.log('✅ Database seeding completed!');
+    console.log('? Database seeding completed!');
     
   } catch (error) {
-    console.error('❌ Seeding failed:', error);
+    console.error('? Seeding failed:', error);
     process.exit(1);
   }
 }

@@ -110,7 +110,44 @@ Deno.serve(async (req: Request) => {
 async function processGoyzerPayload(supabase: any, payload: GoyzerPayload) {
   const slug = generateSlug(payload.title);
   
-  const propertyData = {
+  // Resolve developer
+  let developerId = null;
+  if (payload.developer) {
+    const { data: existingDeveloper } = await supabase
+      .from('developers')
+      .select('id')
+      .eq('name', payload.developer)
+      .maybeSingle();
+
+    if (existingDeveloper) {
+      developerId = existingDeveloper.id;
+    } else {
+      const developerSlug = generateSlug(payload.developer);
+      const { data: newDeveloper } = await supabase
+        .from('developers')
+        .insert({
+          name: payload.developer,
+          slug: developerSlug,
+          is_active: true,
+        })
+        .select('id')
+        .single();
+      developerId = newDeveloper?.id ?? null;
+    }
+  }
+
+  // Resolve agent
+  let agentId = null;
+  if (payload.agent_email) {
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('id')
+      .eq('email', payload.agent_email)
+      .maybeSingle();
+    agentId = agent?.id ?? null;
+  }
+
+  const propertyData: any = {
     slug,
     title: payload.title,
     description: payload.description,
@@ -138,9 +175,9 @@ async function processGoyzerPayload(supabase: any, payload: GoyzerPayload) {
     floor_plan_images: payload.floor_plans || [],
     video_url: payload.video_url || null,
     virtual_tour_url: payload.virtual_tour_url || null,
-    developer: payload.developer,
+    developer_id: developerId,
     project_name: payload.project_name,
-    year_completion: payload.completion_date ? new Date(payload.completion_date).getFullYear() : null,
+    completion_date: payload.completion_date || null,
     payment_plan: payload.payment_plan || null,
     goyzer_listing_id: payload.listing_id,
     external_id: payload.external_id,
@@ -149,6 +186,10 @@ async function processGoyzerPayload(supabase: any, payload: GoyzerPayload) {
     is_promoted: false,
     published_at: new Date().toISOString(),
   };
+
+  if (agentId) {
+    propertyData.agent_id = agentId;
+  }
 
   // Upsert property
   const { data: property, error: propertyError } = await supabase
@@ -170,13 +211,13 @@ async function processGoyzerPayload(supabase: any, payload: GoyzerPayload) {
       property_id: property.id,
     });
 
-  // If agent email provided, link agent
-  if (payload.agent_email) {
+  // Link agent separately if provided
+  if (payload.agent_email && !agentId) {
     const { data: agent } = await supabase
       .from('agents')
       .select('id')
       .eq('email', payload.agent_email)
-      .single();
+      .maybeSingle();
     
     if (agent) {
       await supabase

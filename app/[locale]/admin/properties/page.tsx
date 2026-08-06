@@ -11,74 +11,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/ca
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/lib/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/lib/components/ui/dropdown-menu';
 import { cn, formatPrice } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const mockProperties = [
-  {
-    id: '1',
-    slug: 'riverside-views-damac',
-    title: 'Riverside Views by DAMAC',
-    property_type: 'apartment',
-    listing_type: 'sale',
-    price_min: 887000,
-    price_max: 1200000,
-    price_currency: 'AED',
-    bedrooms: 2,
-    bathrooms: 2,
-    area_sqft: 1100,
-    area_name: 'Dubai Investment Park 2',
-    developer: 'DAMAC Properties',
-    status: 'active',
-    is_featured: true,
-    is_promoted: false,
-    created_at: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    slug: 'city-walk-crestlane-meraas',
-    title: 'City Walk Crestlane by Meraas',
-    property_type: 'apartment',
-    listing_type: 'sale',
-    price_min: 2600000,
-    price_max: 4500000,
-    price_currency: 'AED',
-    bedrooms: 3,
-    bathrooms: 3,
-    area_sqft: 1800,
-    area_name: 'City Walk, Dubai',
-    developer: 'Meraas',
-    status: 'active',
-    is_featured: true,
-    is_promoted: true,
-    created_at: '2024-01-20T10:00:00Z',
-  },
-  {
-    id: '3',
-    slug: 'kaia-elea-elva-valley-emaar',
-    title: 'Kaia - Elea - Elva The Valley by Emaar',
-    property_type: 'townhouse',
-    listing_type: 'sale',
-    price_min: 2800000,
-    price_max: 3500000,
-    price_currency: 'AED',
-    bedrooms: 4,
-    bathrooms: 4,
-    area_sqft: 2500,
-    area_name: 'The Valley, Dubai',
-    developer: 'Emaar Properties',
-    status: 'active',
-    is_featured: true,
-    is_promoted: false,
-    created_at: '2024-02-01T10:00:00Z',
-  },
-];
+interface Property {
+  id: string;
+  slug: string;
+  title: string;
+  property_type: string;
+  price_min: number | null;
+  price_max: number | null;
+  price_currency: string;
+  area_name: string | null;
+  developer: string;
+  status: string;
+  is_featured: boolean;
+  is_promoted: boolean;
+  created_at: string;
+}
 
 export default function AdminPropertiesPage() {
   const t = useTranslations();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [total, setTotal] = useState(0);
 
   const statusOptions = [
     { value: 'all', label: t('properties.filters.allStatus') },
@@ -86,6 +45,9 @@ export default function AdminPropertiesPage() {
     { value: 'pending', label: t('properties.filters.pending') },
     { value: 'sold', label: t('properties.filters.sold') },
     { value: 'draft', label: t('properties.filters.draft') },
+    { value: 'off_plan', label: 'Off-Plan' },
+    { value: 'ready', label: 'Ready' },
+    { value: 'under_construction', label: 'Under Construction' },
   ];
 
   const typeOptions = [
@@ -98,6 +60,32 @@ export default function AdminPropertiesPage() {
     { value: 'commercial', label: 'Commercial' },
     { value: 'land', label: 'Land' },
   ];
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.set('page', '1');
+        params.set('limit', '50');
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+        if (typeFilter !== 'all') params.set('property_type', typeFilter);
+        if (searchQuery) params.set('search', searchQuery);
+
+        const res = await fetch(`/api/admin/properties?${params.toString()}`);
+        const json = await res.json();
+        if (json.data) {
+          setProperties(json.data);
+          setTotal(json.pagination?.total || 0);
+        }
+      } catch (error) {
+        console.error('Failed to load properties:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProperties();
+  }, [statusFilter, typeFilter, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -192,83 +180,97 @@ export default function AdminPropertiesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockProperties.map((property, index) => (
-                <motion.tr
-                  key={property.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="hover:bg-muted/50 transition-colors"
-                >
-                  <TableCell className="w-12 text-center">
-                    <div className="w-14 h-10 rounded-lg bg-muted relative overflow-hidden flex mx-auto">
-                      <span className="text-xs font-medium gradient-gold">🏠</span>
-                    </div>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    {t('admin.loading')}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-medium truncate max-w-[300px]">{property.title}</p>
-                        <p className="text-sm text-muted-foreground">{property.bedrooms} bed • {property.bathrooms} bath • {property.area_sqft.toLocaleString()} sqft</p>
+                </TableRow>
+              ) : properties.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    {t('admin.noData')}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                properties.map((property, index) => (
+                  <motion.tr
+                    key={property.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-muted/50 transition-colors"
+                  >
+                    <TableCell className="w-12 text-center">
+                      <div className="w-14 h-10 rounded-lg bg-muted relative overflow-hidden flex mx-auto">
+                        <span className="text-xs font-medium gradient-gold">??</span>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-sm text-muted-foreground">{property.area_name}</span>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <span className="text-sm text-muted-foreground">{property.developer}</span>
-                  </TableCell>
-                  <TableCell className="text-right font-semibold gradient-gold">
-                    {formatPrice(property.price_min || 0, property.price_currency)}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <Badge variant="outline" className="text-xs">
-                      {property.property_type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <Badge variant={property.status === 'active' ? 'success' : property.status === 'pending' ? 'warning' : 'destructive'}>
-                      {property.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      {property.is_featured && <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />}
-                      {property.is_promoted && <Tag className="w-4 h-4 text-red-500" />}
-                    </div>
-                  </TableCell>
-                  <TableCell className="w-48 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => window.location.href = `/admin/properties/${property.id}`}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          {t('admin.view')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.location.href = `/admin/properties/${property.id}/edit`}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          {t('admin.edit')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => window.open(`/properties/${property.slug}`, '_blank')}>
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          {t('admin.viewOnSite')}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive" onClick={() => { if(confirm('Delete this property?')) {/* delete logic */} }}>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          {t('admin.delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </motion.tr>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="font-medium truncate max-w-[300px]">{property.title}</p>
+                          <p className="text-sm text-muted-foreground">{property.price_min ? `${formatPrice(property.price_min, property.price_currency)}` : 'Price on request'}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <span className="text-sm text-muted-foreground">{property.area_name || '-'}</span>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="text-sm text-muted-foreground">{property.developer || '-'}</span>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold gradient-gold">
+                      {formatPrice(property.price_min || 0, property.price_currency)}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <Badge variant="outline" className="text-xs">
+                        {property.property_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <Badge variant={property.status === 'active' ? 'success' : property.status === 'pending' ? 'warning' : 'destructive'}>
+                        {property.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        {property.is_featured && <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />}
+                        {property.is_promoted && <Tag className="w-4 h-4 text-red-500" />}
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-48 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => window.location.href = `/admin/properties/${property.id}`}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            {t('admin.view')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => window.location.href = `/admin/properties/${property.id}/edit`}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            {t('admin.edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => window.open(`/properties/${property.slug}`, '_blank')}>
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            {t('admin.viewOnSite')}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => { if(confirm('Delete this property?')) { /* delete logic */ } }}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {t('admin.delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </motion.tr>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -281,13 +283,11 @@ export default function AdminPropertiesPage() {
         className="flex items-center justify-between"
       >
         <p className="text-sm text-muted-foreground">
-          Showing 1 to 3 of 247 results
+          {loading ? '...' : `Showing 1 to ${properties.length} of ${total} results`}
         </p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" disabled>Previous</Button>
-          <Button variant="outline" size="sm">1</Button>
-          <Button variant="luxury" size="sm">2</Button>
-          <Button variant="outline" size="sm">3</Button>
+          <Button variant="luxury" size="sm">1</Button>
           <Button variant="outline" size="sm">Next</Button>
         </div>
       </motion.div>
