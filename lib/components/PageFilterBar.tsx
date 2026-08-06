@@ -50,9 +50,10 @@ interface PageFilterBarProps {
   basePath: string;
   defaultQuery?: Record<string, string | undefined>;
   children?: React.ReactNode;
+  hideFilters?: boolean;
 }
 
-export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, children }: PageFilterBarProps) {
+export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, children, hideFilters = false }: PageFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -100,44 +101,46 @@ export function PageFilterBar({ title, totalCount, basePath, defaultQuery = {}, 
                   : 'Explore premium properties in Dubai'}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search..."
-                  defaultValue={query}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (!value) {
-                      router.push(updateParams({ q: null }));
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const value = (e.target as HTMLInputElement).value;
-                      router.push(updateParams({ q: value || null }));
-                    }
-                  }}
-                  className="pl-9 w-56"
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPanelOpen((prev) => !prev)}
-                className={cn('gap-2 rounded-xl border-border/70', activeFilterCount > 0 && 'border-accent text-accent')}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                Filters
-                {activeFilterCount > 0 && <Badge variant="success" className="ml-1">{activeFilterCount}</Badge>}
-              </Button>
-            </div>
+             <div className="flex items-center gap-3">
+               <div className="relative">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                 <Input
+                   placeholder="Search..."
+                   defaultValue={query}
+                   onChange={(e) => {
+                     const value = e.target.value;
+                     if (!value) {
+                       router.push(updateParams({ q: null }));
+                     }
+                   }}
+                   onKeyDown={(e) => {
+                     if (e.key === 'Enter') {
+                       const value = (e.target as HTMLInputElement).value;
+                       router.push(updateParams({ q: value || null }));
+                     }
+                   }}
+                   className="pl-9 w-56"
+                 />
+               </div>
+               {!hideFilters && (
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => setPanelOpen((prev) => !prev)}
+                   className={cn('gap-2 rounded-xl border-border/70', activeFilterCount > 0 && 'border-accent text-accent')}
+                 >
+                   <SlidersHorizontal className="w-4 h-4" />
+                   Filters
+                   {activeFilterCount > 0 && <Badge variant="success" className="ml-1">{activeFilterCount}</Badge>}
+                 </Button>
+               )}
+             </div>
           </div>
         </div>
       </div>
 
       <AnimatePresence>
-        {panelOpen && (
+        {!hideFilters && panelOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}

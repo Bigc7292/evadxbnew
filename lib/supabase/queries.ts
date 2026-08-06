@@ -257,10 +257,17 @@ export async function getProperties(filters?: {
   min_area?: number;
   max_area?: number;
   bedrooms?: number;
+  bathrooms?: number;
   status?: string;
   limit?: number;
   offset?: number;
   featured_only?: boolean;
+  search?: string;
+  furnishing?: string;
+  tenancy?: string;
+  view_type?: string;
+  ownership?: string;
+  sort_by?: 'price_asc' | 'price_desc' | 'newest' | 'area';
 }) {
   const cacheKey = createCacheKey(['properties', filters]);
   const cached = getCached<{ properties: Property[]; totalCount: number }>(cacheKey);
@@ -268,8 +275,17 @@ export async function getProperties(filters?: {
 
   let query = supabase
     .from('properties')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false });
+    .select('*', { count: 'exact' });
+
+  if (filters?.sort_by === 'price_asc') {
+    query = query.order('price', { ascending: true });
+  } else if (filters?.sort_by === 'price_desc') {
+    query = query.order('price', { ascending: false });
+  } else if (filters?.sort_by === 'area') {
+    query = query.order('area_sqft', { ascending: false });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
 
   if (filters?.property_type) {
     query = query.eq('property_type', filters.property_type);
@@ -295,8 +311,27 @@ export async function getProperties(filters?: {
   if (filters?.bedrooms) {
     query = query.gte('bedrooms', filters.bedrooms);
   }
+  if (filters?.bathrooms) {
+    query = query.gte('bathrooms', filters.bathrooms);
+  }
   if (filters?.status) {
     query = query.eq('status', filters.status);
+  }
+  if (filters?.search) {
+    const term = `%${filters.search}%`;
+    query = query.or(`title.ilike.${term},location.ilike.${term},developer.ilike.${term},area.ilike.${term}`);
+  }
+  if (filters?.furnishing) {
+    query = query.contains('features', [filters.furnishing]);
+  }
+  if (filters?.tenancy) {
+    query = query.contains('features', [filters.tenancy]);
+  }
+  if (filters?.view_type) {
+    query = query.contains('features', [filters.view_type]);
+  }
+  if (filters?.ownership) {
+    query = query.contains('features', [filters.ownership]);
   }
   if (filters?.featured_only) {
     query = query.eq('is_featured', true);

@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { getProperties } from '@/lib/supabase/queries';
-import { InfinitePropertyGrid } from '@/lib/components/InfinitePropertyGrid';
+import { ListingsGrid } from '@/lib/components/ListingsGrid';
 import { CustomCursor } from '@/lib/components/CustomCursor';
 import { PageFilterBar } from '@/lib/components/PageFilterBar';
 
@@ -14,9 +14,7 @@ interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-async function fetchOffPlan(page: number, filters?: Record<string, string | undefined>) {
-  const limit = 24;
-  const offset = (page - 1) * limit;
+async function fetchOffPlan(filters?: Record<string, string | undefined>) {
   const bedrooms = filters?.bedrooms ? parseInt(filters.bedrooms, 10) : undefined;
   const min_price = filters?.min_price ? parseFloat(filters.min_price) : undefined;
   const max_price = filters?.max_price ? parseFloat(filters.max_price) : undefined;
@@ -28,8 +26,8 @@ async function fetchOffPlan(page: number, filters?: Record<string, string | unde
     bedrooms,
     min_price,
     max_price,
-    limit,
-    offset,
+    search: filters?.q,
+    limit: 24,
   });
 }
 
@@ -42,9 +40,10 @@ export default async function OffPlanPropertiesPage({ params, searchParams }: Pa
     bedrooms: typeof resolvedSearchParams.bedrooms === 'string' ? resolvedSearchParams.bedrooms : undefined,
     min_price: typeof resolvedSearchParams.min_price === 'string' ? resolvedSearchParams.min_price : undefined,
     max_price: typeof resolvedSearchParams.max_price === 'string' ? resolvedSearchParams.max_price : undefined,
+    q: typeof resolvedSearchParams.q === 'string' ? resolvedSearchParams.q : undefined,
   };
 
-  const initialResult = await fetchOffPlan(1, filters);
+  const initialResult = await fetchOffPlan(filters);
   const initialProperties = initialResult.properties;
   const totalCount = initialResult.totalCount;
 
@@ -52,12 +51,14 @@ export default async function OffPlanPropertiesPage({ params, searchParams }: Pa
     <>
       <CustomCursor />
       <section className="px-4 sm:px-6 lg:px-8 py-0" id="properties">
-        <PageFilterBar title="Off-Plan Properties" totalCount={totalCount} basePath={`/${locale}/properties/off-plan`} defaultQuery={filters}>
-          <InfinitePropertyGrid
-            initialProperties={initialProperties}
+        <PageFilterBar title="Off-Plan Properties" totalCount={totalCount} basePath={`/${locale}/properties/off-plan`} defaultQuery={filters} hideFilters>
+          <ListingsGrid
+            properties={initialProperties}
             locale={locale}
             totalCount={totalCount}
-            filters={filters}
+            hasMore={totalCount > initialProperties.length}
+            loading={false}
+            disableFilters
           />
         </PageFilterBar>
       </section>
