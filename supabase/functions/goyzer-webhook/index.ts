@@ -240,11 +240,11 @@ function mapPropertyType(type: string): string {
 }
 
 function mapGoyzerStatus(status: string): string {
-  if (!status) return 'ready';
+  if (!status) return 'secondary';
   const normalized = status.toLowerCase();
   if (normalized === 'off_plan' || normalized === 'off-plan' || normalized === 'offplan') return 'off_plan';
-  if (normalized === 'ready' || normalized === 'active' || normalized === 'available') return 'ready';
-  return 'ready';
+  if (normalized === 'secondary' || normalized === 'ready' || normalized === 'active' || normalized === 'available') return 'secondary';
+  return 'secondary';
 }
 
 function generateSlug(title: string): string {

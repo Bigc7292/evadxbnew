@@ -42,7 +42,7 @@ export default function AdminPropertiesPage() {
   const statusOptions = [
     { value: 'all', label: 'All statuses' },
     { value: 'off_plan', label: 'Off-Plan' },
-    { value: 'ready', label: 'Secondary / Ready' },
+    { value: 'secondary', label: 'Secondary' },
   ];
 
   const typeOptions = [
@@ -224,7 +224,7 @@ export default function AdminPropertiesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <Badge variant={property.status === 'ready' ? 'success' : property.status === 'off_plan' ? 'warning' : 'destructive'}>
+                      <Badge variant={property.status === 'secondary' ? 'success' : property.status === 'off_plan' ? 'warning' : 'destructive'}>
                         {property.status}
                       </Badge>
                     </TableCell>

@@ -166,7 +166,7 @@ async function handleProductWebhook(supabase: any, payload: any, topic: string) 
       description: product.description || '',
       property_type: mapWooCategoryToPropertyType(product.categories),
       listing_type: 'sale',
-      status: product.status === 'publish' ? 'ready' : 'draft',
+      status: product.status === 'publish' ? 'secondary' : 'draft',
       price_min: product.price ? parseFloat(product.price) : null,
       price_max: product.regular_price ? parseFloat(product.regular_price) : null,
       price_currency: 'AED',
