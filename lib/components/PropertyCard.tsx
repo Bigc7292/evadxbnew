@@ -81,7 +81,7 @@ export function PropertyCard({ property, locale, index }: PropertyCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10" />
 
         <div className="absolute top-4 left-4 flex flex-wrap gap-2 z-20">
-          <Badge variant={property.status === 'ready' ? 'success' : property.status === 'under_construction' ? 'warning' : 'luxury'}>
+          <Badge variant={property.status === 'ready' ? 'success' : 'luxury'}>
             {property.status === 'ready' ? t('available') : property.status.replace('_', ' ')}
           </Badge>
           {property.is_featured && (

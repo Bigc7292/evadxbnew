@@ -17,7 +17,7 @@ export type Property = {
   price_max: number | null;
   price_currency: string;
   property_type: 'apartment' | 'villa' | 'townhouse' | 'penthouse' | 'studio' | 'commercial' | 'land';
-  status: 'off_plan' | 'ready' | 'under_construction' | 'active' | 'pending' | 'sold' | 'rented' | 'off_market' | 'draft';
+  status: 'off_plan' | 'ready';
   listing_type: 'sale' | 'rent' | 'both';
   bedrooms: number | null;
   bathrooms: number | null;

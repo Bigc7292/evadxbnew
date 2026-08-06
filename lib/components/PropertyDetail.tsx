@@ -92,7 +92,7 @@ export function PropertyDetail({ property, locale }: PropertyDetailProps) {
         )}
 
         <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-          <Badge variant={property.status === 'ready' ? 'success' : property.status === 'under_construction' ? 'warning' : property.status === 'off_plan' ? 'luxury' : 'default'} className="shadow-lg">
+          <Badge variant={property.status === 'ready' ? 'success' : property.status === 'off_plan' ? 'luxury' : 'default'} className="shadow-lg">
             {property.status === 'ready' ? tCard('available') : property.status.replace('_', ' ')}
           </Badge>
           {property.is_featured && <Badge variant="luxury" className="shadow-lg shadow-accent/20">✨ {tCard('featured')}</Badge>}

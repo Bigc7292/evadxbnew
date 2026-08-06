@@ -154,7 +154,7 @@ async function processGoyzerPayload(supabase: any, payload: GoyzerPayload) {
     short_description: payload.description?.slice(0, 300) || '',
     property_type: mapPropertyType(payload.property_type),
     listing_type: payload.listing_type,
-    status: payload.status,
+    status: mapGoyzerStatus(payload.status),
     price_min: payload.price,
     price_max: payload.price,
     price_currency: payload.currency || 'AED',
@@ -237,6 +237,14 @@ function mapPropertyType(type: string): string {
   if (t.includes('commercial')) return 'commercial';
   if (t.includes('land') || t.includes('plot')) return 'land';
   return 'apartment';
+}
+
+function mapGoyzerStatus(status: string): string {
+  if (!status) return 'ready';
+  const normalized = status.toLowerCase();
+  if (normalized === 'off_plan' || normalized === 'off-plan' || normalized === 'offplan') return 'off_plan';
+  if (normalized === 'ready' || normalized === 'active' || normalized === 'available') return 'ready';
+  return 'ready';
 }
 
 function generateSlug(title: string): string {

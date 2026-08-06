@@ -40,14 +40,9 @@ export default function AdminPropertiesPage() {
   const [total, setTotal] = useState(0);
 
   const statusOptions = [
-    { value: 'all', label: t('properties.filters.allStatus') },
-    { value: 'active', label: t('properties.filters.active') },
-    { value: 'pending', label: t('properties.filters.pending') },
-    { value: 'sold', label: t('properties.filters.sold') },
-    { value: 'draft', label: t('properties.filters.draft') },
+    { value: 'all', label: 'All statuses' },
     { value: 'off_plan', label: 'Off-Plan' },
-    { value: 'ready', label: 'Ready' },
-    { value: 'under_construction', label: 'Under Construction' },
+    { value: 'ready', label: 'Secondary / Ready' },
   ];
 
   const typeOptions = [
@@ -229,7 +224,7 @@ export default function AdminPropertiesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <Badge variant={property.status === 'active' ? 'success' : property.status === 'pending' ? 'warning' : 'destructive'}>
+                      <Badge variant={property.status === 'ready' ? 'success' : property.status === 'off_plan' ? 'warning' : 'destructive'}>
                         {property.status}
                       </Badge>
                     </TableCell>
